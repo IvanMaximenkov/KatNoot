@@ -1,0 +1,10 @@
+{
+  "name": "Катнуть",
+  "short_name": "Катнуть",
+  "description": "Московские велозаезды и клубы",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7f1",
+  "theme_color": "#1d7c5c",
+  "icons": []
+}
