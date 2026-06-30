@@ -4,8 +4,9 @@ import type { Map as LeafletMap } from "leaflet";
 import { Crosshair, LocateFixed, X } from "lucide-react";
 import { FilterChips } from "@/components/FilterChips";
 import { RideCard } from "@/components/RideCard";
-import { mapPointLabels, type QuickFilter } from "@/lib/labels";
-import type { MapPoint, RideWithClub } from "@/lib/types";
+import { bikeMarkerHtml } from "@/lib/map-markers";
+import type { QuickFilter } from "@/lib/labels";
+import type { RideWithClub } from "@/lib/types";
 
 function matchesFilter(ride: RideWithClub, filter: QuickFilter | null) {
   if (!filter) return true;
@@ -29,7 +30,7 @@ function matchesFilter(ride: RideWithClub, filter: QuickFilter | null) {
   return true;
 }
 
-export function MapView({ rides, points }: { rides: RideWithClub[]; points: MapPoint[] }) {
+export function MapView({ rides }: { rides: RideWithClub[] }) {
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const [selectedRide, setSelectedRide] = useState<RideWithClub | null>(null);
@@ -96,28 +97,13 @@ export function MapView({ rides, points }: { rides: RideWithClub[]; points: MapP
 
       filteredRides.forEach((ride) => {
         const icon = L.divIcon({
-          html: `<span class="ride-marker" title="${ride.title}">В</span>`,
+          html: bikeMarkerHtml(ride.title),
           className: "",
           iconSize: [34, 34],
           iconAnchor: [17, 17]
         });
         const marker = L.marker([ride.start_lat, ride.start_lng], { icon }).addTo(map);
         marker.on("click", () => setSelectedRide(ride));
-        markerLayers.push(marker);
-      });
-
-      points.forEach((point) => {
-        const icon = L.divIcon({
-          html: `<span class="poi-marker" title="${point.title}">${point.type === "warning" ? "!" : "+"}</span>`,
-          className: "",
-          iconSize: [26, 26],
-          iconAnchor: [13, 13]
-        });
-        const marker = L.marker([point.lat, point.lng], { icon }).addTo(map);
-        marker.bindTooltip(`${mapPointLabels[point.type]}: ${point.title}`, {
-          direction: "top",
-          offset: [0, -10]
-        });
         markerLayers.push(marker);
       });
     }
@@ -128,7 +114,7 @@ export function MapView({ rides, points }: { rides: RideWithClub[]; points: MapP
       cancelled = true;
       markerLayers.forEach((marker) => marker.remove());
     };
-  }, [filteredRides, mapReady, points]);
+  }, [filteredRides, mapReady]);
 
   function locateUser() {
     if (!navigator.geolocation) {
@@ -156,7 +142,7 @@ export function MapView({ rides, points }: { rides: RideWithClub[]; points: MapP
               <p className="text-xs font-semibold uppercase tracking-normal text-app-accent">
                 Карта Москвы
               </p>
-              <h1 className="text-2xl font-black">Старты и велоточки</h1>
+              <h1 className="text-2xl font-black">Старты заездов</h1>
             </div>
             <button
               type="button"

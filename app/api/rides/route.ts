@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { createRide, getRideDetail, listRides } from "@/lib/db/repository";
+import {
+  canCreateRideForClub,
+  createRide,
+  getRideDetail,
+  listRides
+} from "@/lib/db/repository";
 import { createRideSchema } from "@/lib/db/schemas";
 import { demoUser } from "@/lib/demo-data";
 
@@ -23,9 +28,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Минимальный темп не может быть выше максимального" }, { status: 400 });
   }
 
+  const creatorUserId = parsed.data.creator_user_id ?? demoUser.id;
+  if (parsed.data.club_id) {
+    const allowed = await canCreateRideForClub(creatorUserId, parsed.data.club_id);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Создавать заезды от имени клуба могут только админы и организаторы клуба" },
+        { status: 403 }
+      );
+    }
+  }
+
   const ride = await createRide({
     ...parsed.data,
-    creator_user_id: parsed.data.creator_user_id ?? demoUser.id,
+    club_id: parsed.data.club_id ?? null,
+    creator_user_id: creatorUserId,
     route_url: parsed.data.route_url || null,
     telegram_chat_url: parsed.data.telegram_chat_url || null,
     finish_location_name: parsed.data.finish_location_name || null,

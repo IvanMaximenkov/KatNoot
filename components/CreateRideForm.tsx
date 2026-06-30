@@ -1,12 +1,22 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, Copy, ExternalLink, Loader2, Send } from "lucide-react";
+import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
+import { Building2, Check, Copy, ExternalLink, Loader2, LocateFixed, Send, UserRound } from "lucide-react";
 import { bikeTypeLabels, levelLabels, rideTypeLabels } from "@/lib/labels";
 import { formatDateInputValue, rideShareText } from "@/lib/format";
+import { bikeMarkerHtml } from "@/lib/map-markers";
 import { hapticFeedback } from "@/lib/telegram/webapp";
-import type { BikeType, Club, CyclingLevel, RideType, RideWithClub } from "@/lib/types";
+import type {
+  BikeType,
+  Club,
+  ClubMembership,
+  CyclingLevel,
+  RideType,
+  RideWithClub,
+  User
+} from "@/lib/types";
 
 type SubmitState =
   | { status: "idle" }
@@ -17,6 +27,8 @@ type SubmitState =
 const levelOptions = Object.entries(levelLabels) as Array<[CyclingLevel, string]>;
 const bikeOptions = Object.entries(bikeTypeLabels) as Array<[BikeType, string]>;
 const rideTypeOptions = Object.entries(rideTypeLabels) as Array<[RideType, string]>;
+const organizerRoles = new Set<ClubMembership["role"]>(["admin", "organizer"]);
+const defaultStartPoint = { lat: 55.7298, lng: 37.6037 };
 
 function defaultDate() {
   const date = new Date();
@@ -25,17 +37,73 @@ function defaultDate() {
   return formatDateInputValue(date.toISOString());
 }
 
-export function CreateRideForm({ clubs }: { clubs: Club[] }) {
+export function CreateRideForm({
+  clubs,
+  memberships,
+  initialUser
+}: {
+  clubs: Club[];
+  memberships: ClubMembership[];
+  initialUser: User;
+}) {
   const [state, setState] = useState<SubmitState>({ status: "idle" });
   const [noDrop, setNoDrop] = useState(true);
   const [createdLinkCopied, setCreatedLinkCopied] = useState(false);
+  const [currentUser, setCurrentUser] = useState(initialUser);
+  const [selectedClubId, setSelectedClubId] = useState("");
+  const [startPoint, setStartPoint] = useState(defaultStartPoint);
   const appUrl =
     typeof window === "undefined"
       ? process.env.NEXT_PUBLIC_APP_URL
       : window.location.origin || process.env.NEXT_PUBLIC_APP_URL;
 
-  const firstClub = clubs[0];
   const initialDate = useMemo(() => defaultDate(), []);
+  const organizerClubs = useMemo(() => {
+    const allowedClubIds = new Set(
+      memberships
+        .filter((membership) => membership.user_id === currentUser.id && organizerRoles.has(membership.role))
+        .map((membership) => membership.club_id)
+    );
+
+    return clubs.filter((club) => allowedClubIds.has(club.id));
+  }, [clubs, currentUser.id, memberships]);
+  const selectedClub = organizerClubs.find((club) => club.id === selectedClubId) ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    function handleUserReady(event: Event) {
+      const user = (event as CustomEvent<User>).detail;
+      if (user?.id) {
+        setCurrentUser(user);
+      }
+    }
+
+    window.addEventListener("katnut-user-ready", handleUserReady);
+
+    const storedUserId = window.localStorage.getItem("katnut_user_id");
+    if (storedUserId && storedUserId !== initialUser.id) {
+      fetch(`/api/users/${storedUserId}`)
+        .then((response) => (response.ok ? response.json() : null))
+        .then((payload) => {
+          if (!cancelled && payload?.user?.id) {
+            setCurrentUser(payload.user);
+          }
+        })
+        .catch(() => undefined);
+    }
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("katnut-user-ready", handleUserReady);
+    };
+  }, [initialUser.id]);
+
+  useEffect(() => {
+    if (selectedClubId && !organizerClubs.some((club) => club.id === selectedClubId)) {
+      setSelectedClubId("");
+    }
+  }, [organizerClubs, selectedClubId]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,17 +116,17 @@ export function CreateRideForm({ clubs }: { clubs: Club[] }) {
       "00000000-0000-4000-8000-000000000001";
 
     const payload = {
-      club_id: String(formData.get("club_id") || firstClub?.id),
-      creator_user_id: userId,
+      club_id: selectedClub?.id ?? null,
+      creator_user_id: currentUser.id || userId,
       title: String(formData.get("title") || ""),
       description: String(formData.get("description") || ""),
       date_time: new Date(String(formData.get("date_time"))).toISOString(),
       start_location_name: String(formData.get("start_location_name") || ""),
-      start_lat: Number(formData.get("start_lat")),
-      start_lng: Number(formData.get("start_lng")),
+      start_lat: startPoint.lat,
+      start_lng: startPoint.lng,
       finish_location_name: String(formData.get("finish_location_name") || "") || null,
-      finish_lat: String(formData.get("finish_lat") || "") ? Number(formData.get("finish_lat")) : null,
-      finish_lng: String(formData.get("finish_lng") || "") ? Number(formData.get("finish_lng")) : null,
+      finish_lat: null,
+      finish_lng: null,
       distance_km: Number(formData.get("distance_km")),
       pace_min_kmh: Number(formData.get("pace_min_kmh")),
       pace_max_kmh: Number(formData.get("pace_max_kmh")),
@@ -92,6 +160,8 @@ export function CreateRideForm({ clubs }: { clubs: Club[] }) {
     setState({ status: "success", ride: result.ride, shareText });
     hapticFeedback("success");
     form.reset();
+    setSelectedClubId("");
+    setStartPoint(defaultStartPoint);
   }
 
   async function copyShareText(text: string) {
@@ -162,22 +232,45 @@ export function CreateRideForm({ clubs }: { clubs: Club[] }) {
             />
           </label>
 
-          <label className="block text-sm font-bold" htmlFor="club_id">
-            Клуб
-            <select
-              id="club_id"
-              name="club_id"
-              defaultValue={firstClub?.id}
-              required
-              className="mt-2 h-12 w-full rounded-lg border border-app-stroke bg-white px-3 text-base outline-none focus:border-app-accent"
-            >
-              {clubs.map((club) => (
-                <option key={club.id} value={club.id}>
-                  {club.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <section className="rounded-lg border border-app-stroke bg-app-bg/50 p-3">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-lg bg-app-accent text-app-accentText">
+                {selectedClub ? <Building2 size={20} /> : <UserRound size={20} />}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-normal text-app-accent">
+                  {selectedClub ? "Клубный заезд" : "Личный заезд"}
+                </p>
+                <p className="truncate text-sm font-black">
+                  {selectedClub?.name ?? currentUser.first_name}
+                </p>
+              </div>
+            </div>
+
+            {organizerClubs.length > 0 ? (
+              <label className="mt-3 block text-sm font-bold" htmlFor="club_id">
+                Создать от имени
+                <select
+                  id="club_id"
+                  name="club_id"
+                  value={selectedClubId}
+                  onChange={(event) => setSelectedClubId(event.target.value)}
+                  className="mt-2 h-12 w-full rounded-lg border border-app-stroke bg-white px-3 text-base outline-none focus:border-app-accent"
+                >
+                  <option value="">От себя, как райдер</option>
+                  {organizerClubs.map((club) => (
+                    <option key={club.id} value={club.id}>
+                      {club.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <p className="mt-3 text-sm text-app-muted">
+                У вас нет прав администратора или организатора клуба, поэтому заезд будет создан от вашего имени.
+              </p>
+            )}
+          </section>
 
           <label className="block text-sm font-bold" htmlFor="ride_type">
             Тип заезда
@@ -209,31 +302,8 @@ export function CreateRideForm({ clubs }: { clubs: Club[] }) {
             className="mt-2 h-12 w-full rounded-lg border border-app-stroke bg-white px-3 text-base outline-none focus:border-app-accent"
           />
         </label>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <label className="block text-sm font-bold" htmlFor="start_lat">
-            Широта
-            <input
-              id="start_lat"
-              name="start_lat"
-              type="number"
-              step="0.0001"
-              defaultValue="55.7298"
-              required
-              className="mt-2 h-12 w-full rounded-lg border border-app-stroke bg-white px-3 text-base outline-none focus:border-app-accent"
-            />
-          </label>
-          <label className="block text-sm font-bold" htmlFor="start_lng">
-            Долгота
-            <input
-              id="start_lng"
-              name="start_lng"
-              type="number"
-              step="0.0001"
-              defaultValue="37.6037"
-              required
-              className="mt-2 h-12 w-full rounded-lg border border-app-stroke bg-white px-3 text-base outline-none focus:border-app-accent"
-            />
-          </label>
+        <div className="mt-4">
+          <StartPointPicker value={startPoint} onChange={setStartPoint} />
         </div>
       </div>
 
@@ -400,28 +470,6 @@ export function CreateRideForm({ clubs }: { clubs: Club[] }) {
               className="mt-2 h-12 w-full rounded-lg border border-app-stroke bg-white px-3 text-base outline-none focus:border-app-accent"
             />
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm font-bold" htmlFor="finish_lat">
-              Финиш широта
-              <input
-                id="finish_lat"
-                name="finish_lat"
-                type="number"
-                step="0.0001"
-                className="mt-2 h-12 w-full rounded-lg border border-app-stroke bg-white px-3 text-base outline-none focus:border-app-accent"
-              />
-            </label>
-            <label className="block text-sm font-bold" htmlFor="finish_lng">
-              Финиш долгота
-              <input
-                id="finish_lng"
-                name="finish_lng"
-                type="number"
-                step="0.0001"
-                className="mt-2 h-12 w-full rounded-lg border border-app-stroke bg-white px-3 text-base outline-none focus:border-app-accent"
-              />
-            </label>
-          </div>
         </div>
       </div>
 
@@ -440,5 +488,119 @@ export function CreateRideForm({ clubs }: { clubs: Club[] }) {
         Создать заезд
       </button>
     </form>
+  );
+}
+
+function StartPointPicker({
+  value,
+  onChange
+}: {
+  value: typeof defaultStartPoint;
+  onChange: (point: typeof defaultStartPoint) => void;
+}) {
+  const mapNodeRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerRef = useRef<LeafletMarker | null>(null);
+  const initialPointRef = useRef(value);
+  const [message, setMessage] = useState("Нажмите на карте в месте старта.");
+
+  useEffect(() => {
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+
+    async function mountMap() {
+      const L = await import("leaflet");
+      if (!mapNodeRef.current || mapRef.current || cancelled) {
+        return;
+      }
+
+      const initialPoint = initialPointRef.current;
+      const map = L.map(mapNodeRef.current, {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([initialPoint.lat, initialPoint.lng], 13);
+      L.control.zoom({ position: "bottomright" }).addTo(map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19
+      }).addTo(map);
+
+      const marker = L.marker([initialPoint.lat, initialPoint.lng], {
+        icon: L.divIcon({
+          html: bikeMarkerHtml("Точка старта", "ride-marker start-picker-marker"),
+          className: "",
+          iconSize: [34, 34],
+          iconAnchor: [17, 17]
+        })
+      }).addTo(map);
+
+      map.on("click", (event) => {
+        const point = {
+          lat: Number(event.latlng.lat.toFixed(5)),
+          lng: Number(event.latlng.lng.toFixed(5))
+        };
+        marker.setLatLng(point);
+        onChange(point);
+        setMessage("Точка старта выбрана.");
+      });
+
+      mapRef.current = map;
+      markerRef.current = marker;
+      cleanup = () => {
+        map.remove();
+        mapRef.current = null;
+        markerRef.current = null;
+      };
+    }
+
+    mountMap();
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [onChange]);
+
+  useEffect(() => {
+    markerRef.current?.setLatLng(value);
+  }, [value]);
+
+  function locateUser() {
+    if (!navigator.geolocation) {
+      setMessage("Геолокация недоступна. Можно выбрать точку вручную на карте.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const point = {
+          lat: Number(position.coords.latitude.toFixed(5)),
+          lng: Number(position.coords.longitude.toFixed(5))
+        };
+        onChange(point);
+        mapRef.current?.setView(point, 15);
+        markerRef.current?.setLatLng(point);
+        setMessage("Поставили старт рядом с вами.");
+      },
+      () => setMessage("Не получилось получить геолокацию. Выберите точку на карте.")
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-app-stroke bg-app-bg">
+      <div className="relative">
+        <div ref={mapNodeRef} className="start-picker-map h-64 w-full" />
+        <button
+          type="button"
+          onClick={locateUser}
+          title="Поставить старт рядом со мной"
+          className="absolute right-3 top-3 z-[500] grid h-11 w-11 place-items-center rounded-lg bg-app-card text-app-accent shadow-soft"
+        >
+          <LocateFixed size={20} />
+        </button>
+      </div>
+      <p className="border-t border-app-stroke bg-app-card px-3 py-2 text-sm font-semibold text-app-muted">
+        {message}
+      </p>
+    </div>
   );
 }

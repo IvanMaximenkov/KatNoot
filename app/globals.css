@@ -36,6 +36,30 @@ textarea {
   font: inherit;
 }
 
+input,
+select,
+textarea {
+  color: #0f172a;
+  background-color: #ffffff;
+  color-scheme: light;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+option {
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
+.bg-white,
+.bg-slate-50 {
+  color: #0f172a;
+}
+
 .safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 88px);
 }
@@ -64,14 +88,15 @@ textarea {
   box-shadow: 0 10px 28px rgb(15 23 42 / 0.25);
 }
 
-.poi-marker {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border: 2px solid white;
-  border-radius: 999px;
-  background: #f0a635;
-  color: #1f2937;
-  box-shadow: 0 8px 18px rgb(15 23 42 / 0.2);
+.ride-marker svg {
+  width: 20px;
+  height: 20px;
+}
+
+.start-picker-map {
+  min-height: 260px;
+}
+
+.start-picker-marker {
+  background: #0ea5e9;
 }

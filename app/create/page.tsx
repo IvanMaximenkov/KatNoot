@@ -1,10 +1,14 @@
 import { CreateRideForm } from "@/components/CreateRideForm";
-import { listClubs } from "@/lib/db/repository";
+import { ensureDemoUser, listClubMemberships, listClubs } from "@/lib/db/repository";
 
 export const dynamic = "force-dynamic";
 
 export default async function CreateRidePage() {
-  const clubs = await listClubs();
+  const [clubs, memberships, initialUser] = await Promise.all([
+    listClubs(),
+    listClubMemberships(),
+    ensureDemoUser()
+  ]);
 
   return (
     <div className="px-4 pt-4">
@@ -17,7 +21,7 @@ export default async function CreateRidePage() {
           Заполните маршрут, темп и правила. После создания появится готовый текст для чата.
         </p>
       </header>
-      <CreateRideForm clubs={clubs} />
+      <CreateRideForm clubs={clubs} memberships={memberships} initialUser={initialUser} />
     </div>
   );
 }

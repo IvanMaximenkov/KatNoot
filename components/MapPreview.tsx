@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { Map as LeafletMap } from "leaflet";
+import { bikeMarkerHtml } from "@/lib/map-markers";
 
 export function MapPreview({
   lat,
@@ -37,7 +38,7 @@ export function MapPreview({
 
       L.marker([lat, lng], {
         icon: L.divIcon({
-          html: `<span class="ride-marker" title="${title}">В</span>`,
+          html: bikeMarkerHtml(title),
           className: "",
           iconSize: [34, 34],
           iconAnchor: [17, 17]

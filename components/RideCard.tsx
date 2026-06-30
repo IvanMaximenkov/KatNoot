@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Clock3, MapPin, Route, Users } from "lucide-react";
 import { Badge } from "@/components/Badge";
-import { bikeTypeLabels, levelLabels, rideTypeLabels } from "@/lib/labels";
+import { bikeTagLabels, levelTagLabels, rideTypeTagLabels } from "@/lib/labels";
 import { formatRideDate } from "@/lib/format";
 import type { RideWithClub } from "@/lib/types";
 
@@ -11,7 +11,7 @@ export function RideCard({ ride, compact = false }: { ride: RideWithClub; compac
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-normal text-app-accent">
-            {ride.club.name}
+            {ride.organizer.name}
           </p>
           <h2 className="mt-1 text-lg font-bold leading-tight">{ride.title}</h2>
         </div>
@@ -38,11 +38,11 @@ export function RideCard({ ride, compact = false }: { ride: RideWithClub; compac
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Badge tone="blue">{levelLabels[ride.level]}</Badge>
-        <Badge tone="gray">{rideTypeLabels[ride.ride_type]}</Badge>
-        <Badge tone="gray">{bikeTypeLabels[ride.bike_type]}</Badge>
+        <Badge tone="blue">Уровень: {levelTagLabels[ride.level]}</Badge>
+        <Badge tone="gray">Формат: {rideTypeTagLabels[ride.ride_type]}</Badge>
+        <Badge tone="gray">Велосипед: {bikeTagLabels[ride.bike_type]}</Badge>
         <Badge tone="amber">
-          {ride.pace_min_kmh}-{ride.pace_max_kmh} км/ч
+          Темп: {ride.pace_min_kmh}-{ride.pace_max_kmh} км/ч
         </Badge>
       </div>
 

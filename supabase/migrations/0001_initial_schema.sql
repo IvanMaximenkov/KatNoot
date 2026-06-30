@@ -30,7 +30,7 @@ create table if not exists public.clubs (
 
 create table if not exists public.rides (
   id uuid primary key default gen_random_uuid(),
-  club_id uuid not null references public.clubs(id) on delete cascade,
+  club_id uuid references public.clubs(id) on delete set null,
   creator_user_id uuid not null references public.users(id) on delete cascade,
   title text not null,
   description text not null,
@@ -46,7 +46,7 @@ create table if not exists public.rides (
   pace_max_kmh numeric not null check (pace_max_kmh >= pace_min_kmh),
   level text not null check (level in ('beginner', 'casual', 'intermediate', 'advanced', 'sport')),
   ride_type text not null
-    check (ride_type in ('coffee', 'city', 'training', 'gravel', 'road', 'night', 'social', 'long_ride')),
+    check (ride_type in ('coffee', 'city', 'training', 'gravel', 'road', 'night')),
   bike_type text not null check (bike_type in ('road', 'gravel', 'mtb', 'city', 'fixed', 'any')),
   no_drop boolean not null default false,
   max_participants integer check (max_participants is null or max_participants > 0),
@@ -56,6 +56,15 @@ create table if not exists public.rides (
   telegram_chat_url text,
   status text not null default 'active' check (status in ('active', 'cancelled', 'finished')),
   created_at timestamptz not null default now()
+);
+
+create table if not exists public.club_memberships (
+  id uuid primary key default gen_random_uuid(),
+  club_id uuid not null references public.clubs(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  role text not null check (role in ('admin', 'organizer', 'member')),
+  created_at timestamptz not null default now(),
+  unique (club_id, user_id)
 );
 
 create table if not exists public.ride_registrations (
@@ -80,18 +89,22 @@ create table if not exists public.map_points (
 create index if not exists rides_date_time_idx on public.rides(date_time);
 create index if not exists rides_club_id_idx on public.rides(club_id);
 create index if not exists rides_creator_user_id_idx on public.rides(creator_user_id);
+create index if not exists club_memberships_club_id_idx on public.club_memberships(club_id);
+create index if not exists club_memberships_user_id_idx on public.club_memberships(user_id);
 create index if not exists ride_registrations_ride_id_idx on public.ride_registrations(ride_id);
 create index if not exists ride_registrations_user_id_idx on public.ride_registrations(user_id);
 create index if not exists map_points_type_idx on public.map_points(type);
 
 alter table public.users enable row level security;
 alter table public.clubs enable row level security;
+alter table public.club_memberships enable row level security;
 alter table public.rides enable row level security;
 alter table public.ride_registrations enable row level security;
 alter table public.map_points enable row level security;
 
 drop policy if exists "Public read users" on public.users;
 drop policy if exists "Public read clubs" on public.clubs;
+drop policy if exists "Public read club memberships" on public.club_memberships;
 drop policy if exists "Public read rides" on public.rides;
 drop policy if exists "Public read ride registrations" on public.ride_registrations;
 drop policy if exists "Public read map points" on public.map_points;
@@ -102,6 +115,10 @@ create policy "Public read users"
 
 create policy "Public read clubs"
   on public.clubs for select
+  using (true);
+
+create policy "Public read club memberships"
+  on public.club_memberships for select
   using (true);
 
 create policy "Public read rides"
@@ -119,4 +136,6 @@ create policy "Public read map points"
 comment on table public.users is
   'Mini App users. Server routes validate Telegram initData before creating/updating rows.';
 comment on table public.rides is
-  'Group cycling rides created by organizers. Writes go through server API with service role key.';
+  'Cycling rides created by riders or club organizers. Writes go through server API with service role key.';
+comment on table public.club_memberships is
+  'Club roles. Only admin and organizer roles can create rides on behalf of a club.';

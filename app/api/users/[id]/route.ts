@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
-import { updateUserPreferences } from "@/lib/db/repository";
+import { getUserById, updateUserPreferences } from "@/lib/db/repository";
 import { userPreferencesSchema } from "@/lib/db/schemas";
+
+export async function GET(_request: Request, { params }: { params: { id: string } }) {
+  const user = await getUserById(params.id);
+  if (!user) {
+    return NextResponse.json({ error: "Пользователь не найден" }, { status: 404 });
+  }
+
+  return NextResponse.json({ user });
+}
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const json = await request.json().catch(() => null);

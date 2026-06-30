@@ -3,6 +3,7 @@ import { buildDemoData, demoUser } from "@/lib/demo-data";
 import type {
   BikeType,
   Club,
+  ClubMembership,
   CyclingLevel,
   MapPoint,
   RegistrationStatus,
@@ -29,6 +30,10 @@ function getStore() {
 
 export function listMockClubs() {
   return [...getStore().clubs];
+}
+
+export function listMockClubMemberships() {
+  return [...getStore().clubMemberships];
 }
 
 export function listMockUsers() {

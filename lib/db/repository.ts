@@ -5,6 +5,7 @@ import {
   getMockClubBySlug,
   getMockRideById,
   getMockUser,
+  listMockClubMemberships,
   listMockClubs,
   listMockMapPoints,
   listMockRegistrations,
@@ -19,6 +20,7 @@ import { createSupabaseAdminClient, hasSupabaseEnv } from "@/lib/supabase/admin"
 import type {
   BikeType,
   Club,
+  ClubMembership,
   ClubWithStats,
   CyclingLevel,
   MapPoint,
@@ -26,12 +28,14 @@ import type {
   Ride,
   RideDetail,
   RideRegistration,
+  RideOrganizer,
   RideWithClub,
   TelegramMiniAppUser,
   User
 } from "@/lib/types";
 
 const activeStatuses = new Set(["going", "maybe"]);
+const organizerRoles = new Set<ClubMembership["role"]>(["admin", "organizer"]);
 
 export function isUsingSupabase() {
   return hasSupabaseEnv();
@@ -60,6 +64,7 @@ async function getBaseData() {
   if (!isUsingSupabase()) {
     return {
       clubs: listMockClubs(),
+      clubMemberships: listMockClubMemberships(),
       users: listMockUsers(),
       rides: listMockRides(),
       registrations: listMockRegistrations(),
@@ -67,8 +72,9 @@ async function getBaseData() {
     };
   }
 
-  const [clubs, users, rides, registrations, mapPoints] = await Promise.all([
+  const [clubs, clubMemberships, users, rides, registrations, mapPoints] = await Promise.all([
     getSupabaseRows<Club>("clubs", { column: "name" }),
+    getSupabaseRows<ClubMembership>("club_memberships", { column: "created_at" }),
     getSupabaseRows<User>("users", { column: "created_at" }),
     getSupabaseRows<Ride>("rides", { column: "date_time" }),
     getSupabaseRows<RideRegistration>("ride_registrations", { column: "created_at" }),
@@ -77,6 +83,7 @@ async function getBaseData() {
 
   return {
     clubs: clubs ?? [],
+    clubMemberships: clubMemberships ?? [],
     users: users ?? [],
     rides: rides ?? [],
     registrations: registrations ?? [],
@@ -87,15 +94,34 @@ async function getBaseData() {
 function enrichRides(
   rides: Ride[],
   clubs: Club[],
-  registrations: RideRegistration[]
+  registrations: RideRegistration[],
+  users: User[]
 ): RideWithClub[] {
   return rides
     .filter((ride) => ride.status !== "cancelled")
     .map((ride) => {
-      const club = clubs.find((candidate) => candidate.id === ride.club_id);
-      if (!club) {
+      const club = ride.club_id
+        ? clubs.find((candidate) => candidate.id === ride.club_id) ?? null
+        : null;
+      if (ride.club_id && !club) {
         return null;
       }
+      const creator = users.find((candidate) => candidate.id === ride.creator_user_id);
+      const organizer: RideOrganizer = club
+        ? {
+            type: "club",
+            name: club.name,
+            description: club.description,
+            href: `/clubs/${club.slug}`,
+            photo_url: club.logo_url
+          }
+        : {
+            type: "rider",
+            name: creator?.first_name ?? "Велосипедист",
+            description: "Личный заезд от райдера. Запись и детали доступны в карточке старта.",
+            href: null,
+            photo_url: creator?.photo_url ?? null
+          };
 
       const rideRegistrations = registrations.filter(
         (registration) => registration.ride_id === ride.id
@@ -103,6 +129,7 @@ function enrichRides(
       return {
         ...ride,
         club,
+        organizer,
         participant_count: rideRegistrations.filter(
           (registration) => registration.status === "going"
         ).length,
@@ -115,13 +142,34 @@ function enrichRides(
 }
 
 export async function listRides() {
-  const { rides, clubs, registrations } = await getBaseData();
-  return enrichRides(rides, clubs, registrations);
+  const { rides, clubs, registrations, users } = await getBaseData();
+  return enrichRides(rides, clubs, registrations, users);
 }
 
 export async function listMapPoints() {
   const { mapPoints } = await getBaseData();
   return mapPoints;
+}
+
+export async function listClubMemberships() {
+  const { clubMemberships } = await getBaseData();
+  return clubMemberships;
+}
+
+export async function listOrganizerClubs(userId: string) {
+  const { clubs, clubMemberships } = await getBaseData();
+  const allowedClubIds = new Set(
+    clubMemberships
+      .filter((membership) => membership.user_id === userId && organizerRoles.has(membership.role))
+      .map((membership) => membership.club_id)
+  );
+
+  return clubs.filter((club) => allowedClubIds.has(club.id));
+}
+
+export async function canCreateRideForClub(userId: string, clubId: string) {
+  const organizerClubs = await listOrganizerClubs(userId);
+  return organizerClubs.some((club) => club.id === clubId);
 }
 
 export async function listClubs(): Promise<ClubWithStats[]> {
@@ -182,7 +230,11 @@ export async function getRideDetail(id: string): Promise<RideDetail | null> {
     return null;
   }
 
-  const [enriched] = enrichRides([ride], clubs, registrations);
+  const [enriched] = enrichRides([ride], clubs, registrations, users);
+  if (!enriched) {
+    return null;
+  }
+
   const participants = registrations
     .filter((registration) => registration.ride_id === id && activeStatuses.has(registration.status))
     .map((registration) => ({
@@ -316,7 +368,7 @@ export async function upsertRideRegistration(
 export async function getProfileData(userId = demoUser.id) {
   const { rides, clubs, registrations, users } = await getBaseData();
   const user = users.find((candidate) => candidate.id === userId) ?? getMockUser(userId);
-  const enriched = enrichRides(rides, clubs, registrations);
+  const enriched = enrichRides(rides, clubs, registrations, users);
   const registeredIds = new Set(
     registrations
       .filter(
@@ -363,6 +415,24 @@ export async function updateUserPreferences(
   }
 
   return updated as User;
+}
+
+export async function getUserById(id: string) {
+  if (!isUsingSupabase()) {
+    return getMockUser(id);
+  }
+
+  const client = createSupabaseAdminClient();
+  if (!client) {
+    return null;
+  }
+
+  const { data, error } = await client.from("users").select("*").eq("id", id).single();
+  if (error) {
+    return null;
+  }
+
+  return data as User;
 }
 
 export async function getRideById(id: string) {

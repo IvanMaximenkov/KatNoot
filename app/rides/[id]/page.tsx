@@ -7,6 +7,7 @@ import {
   MessageCircle,
   Route,
   ShieldCheck,
+  UserRound,
   Users
 } from "lucide-react";
 import { Badge } from "@/components/Badge";
@@ -15,7 +16,12 @@ import { MapPreview } from "@/components/MapPreview";
 import { RegistrationActions } from "@/components/RegistrationActions";
 import { ShareRideButton } from "@/components/ShareRideButton";
 import { getRideDetail } from "@/lib/db/repository";
-import { bikeTypeLabels, levelLabels, registrationLabels, rideTypeLabels } from "@/lib/labels";
+import {
+  bikeTagLabels,
+  levelTagLabels,
+  registrationLabels,
+  rideTypeLabels
+} from "@/lib/labels";
 import { formatRideDate, isBeginnerFriendly } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -65,8 +71,8 @@ export default async function RideDetailPage({ params }: { params: { id: string 
       <section className="mt-4 rounded-lg border border-app-stroke bg-app-card p-4 shadow-soft">
         <h2 className="text-base font-black">Детали</h2>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Badge tone="blue">{levelLabels[ride.level]}</Badge>
-          <Badge tone="gray">{bikeTypeLabels[ride.bike_type]}</Badge>
+          <Badge tone="blue">Уровень: {levelTagLabels[ride.level]}</Badge>
+          <Badge tone="gray">Велосипед: {bikeTagLabels[ride.bike_type]}</Badge>
           <Badge tone="gray">{ride.status === "active" ? "Активен" : ride.status}</Badge>
         </div>
         {ride.rules && (
@@ -85,20 +91,30 @@ export default async function RideDetailPage({ params }: { params: { id: string 
 
       <section className="mt-4 rounded-lg border border-app-stroke bg-app-card p-4 shadow-soft">
         <div className="flex items-center gap-3">
-          <ClubAvatar club={ride.club} />
+          {ride.club ? (
+            <ClubAvatar club={ride.club} />
+          ) : (
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-app-accent text-app-accentText">
+              <UserRound size={24} />
+            </div>
+          )}
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-normal text-app-accent">Клуб</p>
-            <h2 className="truncate text-lg font-black">{ride.club.name}</h2>
-            <p className="line-clamp-2 text-sm text-app-muted">{ride.club.description}</p>
+            <p className="text-xs font-semibold uppercase tracking-normal text-app-accent">
+              {ride.organizer.type === "club" ? "Клуб" : "Райдер"}
+            </p>
+            <h2 className="truncate text-lg font-black">{ride.organizer.name}</h2>
+            <p className="line-clamp-2 text-sm text-app-muted">{ride.organizer.description}</p>
           </div>
         </div>
-        <Link
-          href={`/clubs/${ride.club.slug}`}
-          className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-app-stroke bg-white text-sm font-bold"
-        >
-          Открыть клуб
-          <ExternalLink size={16} />
-        </Link>
+        {ride.club && (
+          <Link
+            href={`/clubs/${ride.club.slug}`}
+            className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-app-stroke bg-white text-sm font-bold"
+          >
+            Открыть клуб
+            <ExternalLink size={16} />
+          </Link>
+        )}
       </section>
 
       <section className="mt-4 rounded-lg border border-app-stroke bg-app-card p-4 shadow-soft">

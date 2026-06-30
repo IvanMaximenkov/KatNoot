@@ -13,11 +13,10 @@ export type RideType =
   | "training"
   | "gravel"
   | "road"
-  | "night"
-  | "social"
-  | "long_ride";
+  | "night";
 
 export type RideStatus = "active" | "cancelled" | "finished";
+export type ClubRole = "admin" | "organizer" | "member";
 export type RegistrationStatus = "going" | "maybe" | "cancelled";
 export type MapPointType =
   | "bike_lane"
@@ -53,9 +52,17 @@ export interface Club {
   created_at: string;
 }
 
-export interface Ride {
+export interface ClubMembership {
   id: string;
   club_id: string;
+  user_id: string;
+  role: ClubRole;
+  created_at: string;
+}
+
+export interface Ride {
+  id: string;
+  club_id: string | null;
   creator_user_id: string;
   title: string;
   description: string;
@@ -100,8 +107,17 @@ export interface MapPoint {
   created_at: string;
 }
 
+export interface RideOrganizer {
+  type: "club" | "rider";
+  name: string;
+  description: string;
+  href: string | null;
+  photo_url: string | null;
+}
+
 export interface RideWithClub extends Ride {
-  club: Club;
+  club: Club | null;
+  organizer: RideOrganizer;
   participant_count: number;
   maybe_count: number;
 }

@@ -7,16 +7,16 @@ import type {
 } from "@/lib/types";
 
 export const levelLabels: Record<CyclingLevel, string> = {
-  beginner: "Новичкам",
-  casual: "Спокойно",
+  beginner: "Новичок",
+  casual: "Спокойный",
   intermediate: "Средний",
-  advanced: "Сильно",
-  sport: "Спорт"
+  advanced: "Уверенный",
+  sport: "Спортивный"
 };
 
 export const bikeTypeLabels: Record<BikeType, string> = {
-  road: "Шоссе",
-  gravel: "Гравел",
+  road: "Шоссейный",
+  gravel: "Гравийный",
   mtb: "MTB",
   city: "Городской",
   fixed: "Fixed",
@@ -25,13 +25,37 @@ export const bikeTypeLabels: Record<BikeType, string> = {
 
 export const rideTypeLabels: Record<RideType, string> = {
   coffee: "Коферайд",
-  city: "Город",
+  city: "Прогулка",
   training: "Тренировка",
   gravel: "Гравел",
   road: "Шоссе",
-  night: "Ночной",
-  social: "Социальный",
-  long_ride: "Длинный"
+  night: "Ночной"
+};
+
+export const levelTagLabels: Record<CyclingLevel, string> = {
+  beginner: "для новичков",
+  casual: "спокойный",
+  intermediate: "средний",
+  advanced: "уверенный",
+  sport: "спортивный"
+};
+
+export const bikeTagLabels: Record<BikeType, string> = {
+  road: "шоссейный",
+  gravel: "гравийный",
+  mtb: "MTB",
+  city: "городской",
+  fixed: "fixed",
+  any: "любой"
+};
+
+export const rideTypeTagLabels: Record<RideType, string> = {
+  coffee: "кофе и общение",
+  city: "спокойная прогулка",
+  training: "тренировка",
+  gravel: "гравийный маршрут",
+  road: "шоссе",
+  night: "ночной"
 };
 
 export const registrationLabels: Record<RegistrationStatus, string> = {

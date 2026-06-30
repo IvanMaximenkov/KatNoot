@@ -1,5 +1,6 @@
 import type {
   Club,
+  ClubMembership,
   MapPoint,
   Ride,
   RideRegistration,
@@ -75,7 +76,7 @@ export function buildDemoData() {
       telegram_url: "https://t.me/night_city_cycling",
       city: "Москва",
       sport_type: "cycling",
-      tags: ["ночь", "город", "социальный"],
+      tags: ["ночь", "прогулка", "свет"],
       created_at: createdAt
     },
     {
@@ -142,6 +143,37 @@ export function buildDemoData() {
       bike_type: "city",
       preferred_pace_min: 14,
       preferred_pace_max: 19,
+      created_at: createdAt
+    }
+  ];
+
+  const clubMemberships: ClubMembership[] = [
+    {
+      id: "50000000-0000-4000-8000-000000000001",
+      club_id: clubs[0].id,
+      user_id: users[1].id,
+      role: "admin",
+      created_at: createdAt
+    },
+    {
+      id: "50000000-0000-4000-8000-000000000002",
+      club_id: clubs[2].id,
+      user_id: users[1].id,
+      role: "organizer",
+      created_at: createdAt
+    },
+    {
+      id: "50000000-0000-4000-8000-000000000003",
+      club_id: clubs[1].id,
+      user_id: users[2].id,
+      role: "organizer",
+      created_at: createdAt
+    },
+    {
+      id: "50000000-0000-4000-8000-000000000004",
+      club_id: clubs[3].id,
+      user_id: users[3].id,
+      role: "admin",
       created_at: createdAt
     }
   ];
@@ -310,7 +342,7 @@ export function buildDemoData() {
       pace_min_kmh: 20,
       pace_max_kmh: 25,
       level: "casual",
-      ride_type: "social",
+      ride_type: "city",
       bike_type: "any",
       no_drop: true,
       max_participants: 18,
@@ -635,5 +667,5 @@ export function buildDemoData() {
     }
   ];
 
-  return { clubs, users, rides, registrations, mapPoints };
+  return { clubs, users, clubMemberships, rides, registrations, mapPoints };
 }

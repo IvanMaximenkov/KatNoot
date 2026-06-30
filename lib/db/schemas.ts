@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 export const createRideSchema = z.object({
-  club_id: z.string().min(1),
+  club_id: z.preprocess(
+    (value) => (value === "" ? null : value),
+    z.string().min(1).nullable().optional()
+  ),
   creator_user_id: z.string().min(1).optional(),
   title: z.string().min(3).max(120),
   description: z.string().min(10).max(2000),
@@ -22,9 +25,7 @@ export const createRideSchema = z.object({
     "training",
     "gravel",
     "road",
-    "night",
-    "social",
-    "long_ride"
+    "night"
   ]),
   bike_type: z.enum(["road", "gravel", "mtb", "city", "fixed", "any"]),
   no_drop: z.coerce.boolean(),
