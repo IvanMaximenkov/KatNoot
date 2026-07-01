@@ -47,6 +47,17 @@ export function RegistrationActions({ ride }: { ride: RideDetail }) {
     { status: "cancelled" as const, label: "Отменить участие", icon: XCircle }
   ];
 
+  if (ride.status === "cancelled") {
+    return (
+      <section className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-700 shadow-soft">
+        <h2 className="text-base font-black">Заезд отменен</h2>
+        <p className="mt-1 text-sm font-semibold">
+          Запись закрыта{ride.cancellation_reason ? `: ${ride.cancellation_reason}` : "."}
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-lg border border-app-stroke bg-app-card p-4 shadow-soft">
       <div className="flex items-center justify-between gap-3">

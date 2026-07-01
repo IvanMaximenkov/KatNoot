@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Clock3, MapPin, Route, Users } from "lucide-react";
 import { Badge } from "@/components/Badge";
-import { bikeTagLabels, levelTagLabels, rideTypeTagLabels } from "@/lib/labels";
+import { bikeTagLabels, levelTagLabels, rideStatusLabels, rideTypeTagLabels } from "@/lib/labels";
 import { formatRideDate } from "@/lib/format";
 import type { RideWithClub } from "@/lib/types";
 
@@ -15,8 +15,8 @@ export function RideCard({ ride, compact = false }: { ride: RideWithClub; compac
           </p>
           <h2 className="mt-1 text-lg font-bold leading-tight">{ride.title}</h2>
         </div>
-        <Badge tone={ride.no_drop ? "green" : "amber"}>
-          {ride.no_drop ? "No-drop" : "Темп"}
+        <Badge tone={ride.status === "cancelled" ? "red" : ride.no_drop ? "green" : "amber"}>
+          {ride.status === "cancelled" ? "Отменен" : ride.no_drop ? "No-drop" : "Темп"}
         </Badge>
       </div>
 
@@ -29,7 +29,7 @@ export function RideCard({ ride, compact = false }: { ride: RideWithClub; compac
         </div>
         <div className="flex items-center gap-2 text-app-muted">
           <Route size={16} className="text-app-accent" />
-          <span>{ride.distance_km} км</span>
+          <span>{ride.distance_km} км{ride.route || ride.route_url ? " · маршрут" : ""}</span>
         </div>
         <div className="col-span-2 flex items-center gap-2 text-app-muted">
           <MapPin size={16} className="text-app-accent" />
@@ -41,6 +41,12 @@ export function RideCard({ ride, compact = false }: { ride: RideWithClub; compac
         <Badge tone="blue">Уровень: {levelTagLabels[ride.level]}</Badge>
         <Badge tone="gray">Формат: {rideTypeTagLabels[ride.ride_type]}</Badge>
         <Badge tone="gray">Велосипед: {bikeTagLabels[ride.bike_type]}</Badge>
+        {ride.route || ride.route_url ? <Badge tone="blue">Есть маршрут</Badge> : null}
+        {ride.status !== "active" && ride.status !== "published" ? (
+          <Badge tone={ride.status === "cancelled" ? "red" : "gray"}>
+            {rideStatusLabels[ride.status]}
+          </Badge>
+        ) : null}
         <Badge tone="amber">
           Темп: {ride.pace_min_kmh}-{ride.pace_max_kmh} км/ч
         </Badge>

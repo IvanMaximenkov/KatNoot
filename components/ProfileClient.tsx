@@ -1,11 +1,12 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bike, Check, Loader2, Save, UserRound } from "lucide-react";
+import Link from "next/link";
+import { Bell, Bike, Building2, Check, FileText, Loader2, Save, Shield, UserRound } from "lucide-react";
 import { RideCard } from "@/components/RideCard";
-import { bikeTypeLabels, levelLabels } from "@/lib/labels";
+import { bikeTypeLabels, clubApplicationStatusLabels, globalRoleLabels, levelLabels } from "@/lib/labels";
 import { getTelegramUser } from "@/lib/telegram/webapp";
-import type { BikeType, CyclingLevel, RideWithClub, User } from "@/lib/types";
+import type { BikeType, Club, ClubApplication, CyclingLevel, Notification, RideWithClub, User } from "@/lib/types";
 
 const levelOptions = Object.entries(levelLabels) as Array<[CyclingLevel, string]>;
 const bikeOptions = Object.entries(bikeTypeLabels) as Array<[BikeType, string]>;
@@ -13,11 +14,17 @@ const bikeOptions = Object.entries(bikeTypeLabels) as Array<[BikeType, string]>;
 export function ProfileClient({
   user,
   registeredRides,
-  createdRides
+  createdRides,
+  clubs,
+  applications,
+  notifications
 }: {
   user: User;
   registeredRides: RideWithClub[];
   createdRides: RideWithClub[];
+  clubs: Club[];
+  applications: ClubApplication[];
+  notifications: Notification[];
 }) {
   const [telegramName, setTelegramName] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -69,8 +76,21 @@ export function ProfileClient({
             <p className="mt-1 text-sm text-app-muted">
               @{user.username ?? "demo_rider"} · {levelLabels[user.cycling_level]}
             </p>
+            <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-xs font-bold text-app-muted">
+              <Shield size={13} />
+              {globalRoleLabels[user.global_role ?? "rider"]}
+            </p>
           </div>
         </div>
+        {user.global_role === "super_admin" && (
+          <Link
+            href="/admin"
+            className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-app-accent text-sm font-bold text-app-accentText"
+          >
+            <Shield size={16} />
+            Админка
+          </Link>
+        )}
       </section>
 
       <form onSubmit={savePreferences} className="mt-4 rounded-lg border border-app-stroke bg-app-card p-4 shadow-soft">
@@ -174,6 +194,74 @@ export function ProfileClient({
           ) : (
             <p className="rounded-lg border border-dashed border-app-stroke bg-app-card p-4 text-sm text-app-muted">
               Здесь появятся заезды, которые вы создали как организатор.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-black">Мои клубы</h2>
+          <Link href="/clubs/apply" className="rounded-lg bg-app-accent px-3 py-2 text-xs font-bold text-app-accentText">
+            Заявка
+          </Link>
+        </div>
+        <div className="mt-3 space-y-2">
+          {clubs.length > 0 ? (
+            clubs.map((club) => (
+              <Link key={club.id} href={`/clubs/${club.slug}/manage`} className="flex items-center gap-3 rounded-lg border border-app-stroke bg-app-card p-3">
+                <Building2 size={18} className="text-app-accent" />
+                <span className="text-sm font-bold">{club.name}</span>
+              </Link>
+            ))
+          ) : (
+            <p className="rounded-lg border border-dashed border-app-stroke bg-app-card p-4 text-sm text-app-muted">
+              Клубных ролей пока нет. Можно подать заявку на создание клуба.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-lg font-black">Мои заявки</h2>
+        <div className="mt-3 space-y-2">
+          {applications.length > 0 ? (
+            applications.map((application) => (
+              <div key={application.id} className="rounded-lg border border-app-stroke bg-app-card p-3">
+                <div className="flex items-center gap-2">
+                  <FileText size={16} className="text-app-accent" />
+                  <p className="text-sm font-bold">{application.proposed_name}</p>
+                </div>
+                <p className="mt-1 text-xs font-semibold text-app-muted">
+                  {clubApplicationStatusLabels[application.status]}
+                  {application.admin_comment ? ` · ${application.admin_comment}` : ""}
+                </p>
+              </div>
+            ))
+          ) : (
+            <p className="rounded-lg border border-dashed border-app-stroke bg-app-card p-4 text-sm text-app-muted">
+              Заявок пока нет.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-lg font-black">Уведомления</h2>
+        <div className="mt-3 space-y-2">
+          {notifications.length > 0 ? (
+            notifications.map((notification) => (
+              <div key={notification.id} className="rounded-lg border border-app-stroke bg-app-card p-3">
+                <div className="flex items-center gap-2">
+                  <Bell size={16} className={notification.read_at ? "text-app-muted" : "text-app-accent"} />
+                  <p className="text-sm font-bold">{notification.title}</p>
+                </div>
+                <p className="mt-1 text-xs font-semibold text-app-muted">{notification.body}</p>
+              </div>
+            ))
+          ) : (
+            <p className="rounded-lg border border-dashed border-app-stroke bg-app-card p-4 text-sm text-app-muted">
+              Новых уведомлений нет.
             </p>
           )}
         </div>

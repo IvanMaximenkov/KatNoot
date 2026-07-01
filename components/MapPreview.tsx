@@ -1,16 +1,21 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { Map as LeafletMap } from "leaflet";
+import { lineStringToPoints } from "@/lib/geo";
+import { getMapTileConfig } from "@/lib/map-config";
 import { bikeMarkerHtml } from "@/lib/map-markers";
+import type { GeoJsonLineString } from "@/lib/types";
 
 export function MapPreview({
   lat,
   lng,
-  title
+  title,
+  route
 }: {
   lat: number;
   lng: number;
   title: string;
+  route?: GeoJsonLineString | null;
 }) {
   const nodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -24,17 +29,37 @@ export function MapPreview({
         return;
       }
 
+      const tile = getMapTileConfig();
       const map = L.map(nodeRef.current, {
         zoomControl: false,
-        dragging: false,
+        dragging: true,
         scrollWheelZoom: false,
         doubleClickZoom: false,
         attributionControl: false
       }).setView([lat, lng], 14);
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19
+      L.control
+        .attribution({ position: "bottomleft", prefix: false })
+        .addAttribution(tile.attribution)
+        .addTo(map);
+
+      L.tileLayer(tile.url, {
+        maxZoom: 19,
+        attribution: tile.attribution
       }).addTo(map);
+
+      const routePoints = lineStringToPoints(route);
+      if (routePoints.length > 1) {
+        const latLngs = routePoints.map((point) => [point.lat, point.lng] as [number, number]);
+        L.polyline(latLngs, {
+          color: "#1d4ed8",
+          weight: 5,
+          opacity: 0.9,
+          lineCap: "round",
+          lineJoin: "round"
+        }).addTo(map);
+        map.fitBounds(latLngs, { padding: [20, 20] });
+      }
 
       L.marker([lat, lng], {
         icon: L.divIcon({
@@ -54,7 +79,7 @@ export function MapPreview({
 
     mount();
     return () => cleanup?.();
-  }, [lat, lng, title]);
+  }, [lat, lng, route, title]);
 
-  return <div ref={nodeRef} className="h-48 overflow-hidden rounded-lg border border-app-stroke" />;
+  return <div ref={nodeRef} className="h-56 overflow-hidden rounded-lg border border-app-stroke" />;
 }

@@ -7,9 +7,9 @@
 ## Что внутри
 
 - Next.js App Router, TypeScript, Tailwind CSS.
-- Supabase PostgreSQL для пользователей, клубов, заездов, регистраций и POI на карте.
-- API routes для создания заездов, регистрации и Telegram auth.
-- Leaflet + OpenStreetMap tiles, без платных API.
+- Supabase PostgreSQL для пользователей, ролей, клубов, заявок, заездов, маршрутов, регистраций, уведомлений, жалоб и POI на карте.
+- API routes для создания/редактирования/отмены заездов, заявок на клубы, админки, маршрутов, регистрации и Telegram auth.
+- Leaflet + настраиваемый tile provider. В демо используется OSM, production можно перевести на Mapbox/MapTiler/свой сервер через env.
 - Telegram Mini App WebApp API helper.
 - Серверная проверка Telegram `initData` через `TELEGRAM_BOT_TOKEN`.
 - Демо-режим без Supabase env: приложение открывается в браузере с живыми seed-данными.
@@ -35,6 +35,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 TELEGRAM_BOT_TOKEN=123456:bot-token-from-botfather
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+NEXT_PUBLIC_MAP_ATTRIBUTION=(c) OpenStreetMap contributors
+NEXT_PUBLIC_MAP_STYLE_URL=
+ROUTING_PROVIDER=
+ROUTING_API_KEY=
+ROUTING_BASE_URL=
 ```
 
 Для локального демо все поля можно оставить пустыми. Для Supabase и Telegram auth нужны реальные значения.
@@ -51,21 +57,30 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ## Supabase: миграция
 
-В SQL Editor выполните файл:
+В SQL Editor выполните миграции по порядку:
 
 ```text
 supabase/migrations/0001_initial_schema.sql
+supabase/migrations/0002_personal_rides_and_club_roles.sql
+supabase/migrations/0003_roles_clubs_routes_admin.sql
 ```
 
-Миграция создает таблицы:
+Миграции создают и расширяют таблицы:
 
 - `users`
 - `clubs`
+- `club_memberships`
+- `club_applications`
 - `rides`
 - `ride_registrations`
+- `routes`
+- `route_waypoints`
 - `map_points`
+- `moderation_reports`
+- `notifications`
+- `audit_logs`
 
-Также включены RLS и базовые read-политики. Записи создаются через серверные API routes с service role key. Для продакшена лучше добавить более строгую модель прав организаторов и аудит действий.
+Также включены RLS и базовые read-политики. Записи создаются через серверные API routes с service role key. Проверки ролей выполняются на backend/API уровне.
 
 ## Supabase: seed demo data
 
@@ -79,8 +94,10 @@ Seed создает:
 
 - 5 демо-клубов.
 - 12 заездов на сегодня, завтра и ближайшие дни.
+- 3 заезда с сохраненными маршрутами.
+- 2 pending заявки на создание клуба.
 - 10 точек велоинфраструктуры / POI.
-- демо-пользователя и несколько регистраций.
+- demo `super_admin`, verified organizers, club owners/admins/organizers и несколько регистраций.
 
 ## Telegram bot через BotFather
 
@@ -149,27 +166,52 @@ NEXT_PUBLIC_APP_URL=https://your-vercel-domain.vercel.app
 - `/map` — карта стартов и POI.
 - `/create` — создание заезда.
 - `/rides/[id]` — детали и регистрация.
+- `/rides/[id]/edit` — редактирование и отмена заезда.
 - `/clubs` — список клубов.
+- `/clubs/apply` — заявка на создание клуба.
 - `/clubs/[slug]` — страница клуба.
+- `/clubs/[slug]/manage` — управление клубом.
 - `/profile` — профиль и велопредпочтения.
+- `/admin` — панель super_admin.
 
 ## API
 
 - `POST /api/auth/telegram` — проверяет Telegram `initData`, создает/обновляет пользователя.
+- `GET /api/me`, `PATCH /api/me/preferences` — профиль и предпочтения.
 - `GET /api/rides` — список заездов.
 - `POST /api/rides` — создать заезд.
+- `GET/PATCH /api/rides/[id]`, `POST /api/rides/[id]/cancel`, `POST/DELETE /api/rides/[id]/register`.
 - `POST /api/registrations` — записаться, выбрать “возможно” или отменить участие.
+- `POST /api/club-applications`, `GET /api/club-applications/my`.
+- `GET /api/admin/stats`, `/api/admin/users`, `/api/admin/clubs`, `/api/admin/rides`, `/api/admin/reports`, `/api/admin/club-applications`.
+- `POST /api/routes/gpx`, `POST /api/routes/manual`, `GET/PATCH/DELETE /api/routes/[id]`.
+- `GET /api/notifications`, `POST /api/notifications/[id]/read`.
 - `PATCH /api/users/[id]` — обновить базовые предпочтения.
 
 ## Текущие ограничения
 
-- Нет ролей организаторов: любой пользователь с доступом к форме может создать заезд.
-- Нет модерации и жалоб.
+- Админка и club manage сделаны как функциональный MVP, без сложных таблиц поиска/пагинации.
 - Нет полноценной авторизации Supabase Auth; Telegram identity проходит через серверный API.
 - Профиль в браузерном демо-режиме использует демо-пользователя.
-- Карта использует OpenStreetMap tiles напрямую; для большой нагрузки нужен свой tile policy-aware подход.
-- Нет push-уведомлений и напоминаний о старте.
-- Нет редактирования и отмены уже созданного заезда.
+- Push-уведомлений Telegram bot пока нет, есть внутренняя система notifications.
+- Ручной маршрут строит прямую линию по точкам; routing/snapping готовится через `ROUTING_*` env, но провайдер не подключен.
+
+## Демо-роли
+
+Без Supabase env приложение стартует с in-memory seed:
+
+- `00000000-0000-4000-8000-000000000001` — demo `super_admin`.
+- `00000000-0000-4000-8000-000000000002` — verified organizer и club owner/organizer.
+- `00000000-0000-4000-8000-000000000003` — verified organizer и club admin.
+- `00000000-0000-4000-8000-000000000004` — rider и club owner одного демо-клуба.
+- `00000000-0000-4000-8000-000000000005` — обычный rider без клубных ролей.
+
+Для проверки другого пользователя в браузере можно поставить:
+
+```js
+localStorage.setItem("katnut_user_id", "00000000-0000-4000-8000-000000000005")
+location.reload()
+```
 
 ## Следующие продуктовые шаги
 

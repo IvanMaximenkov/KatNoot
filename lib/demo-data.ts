@@ -1,9 +1,14 @@
 import type {
+  AuditLog,
   Club,
+  ClubApplication,
   ClubMembership,
   MapPoint,
+  ModerationReport,
+  Notification,
   Ride,
   RideRegistration,
+  Route,
   User
 } from "@/lib/types";
 
@@ -30,6 +35,7 @@ export const demoUser: User = {
   username: "demo_rider",
   first_name: "Демо райдер",
   photo_url: null,
+  global_role: "super_admin",
   cycling_level: "casual",
   bike_type: "gravel",
   preferred_pace_min: 18,
@@ -51,6 +57,7 @@ export function buildDemoData() {
       city: "Москва",
       sport_type: "cycling",
       tags: ["кофе", "новичкам", "город"],
+      status: "active",
       created_at: createdAt
     },
     {
@@ -64,6 +71,7 @@ export function buildDemoData() {
       city: "Москва",
       sport_type: "cycling",
       tags: ["гравел", "лес", "выходные"],
+      status: "active",
       created_at: createdAt
     },
     {
@@ -77,6 +85,7 @@ export function buildDemoData() {
       city: "Москва",
       sport_type: "cycling",
       tags: ["ночь", "прогулка", "свет"],
+      status: "active",
       created_at: createdAt
     },
     {
@@ -90,6 +99,7 @@ export function buildDemoData() {
       city: "Москва",
       sport_type: "cycling",
       tags: ["новичкам", "no-drop", "город"],
+      status: "active",
       created_at: createdAt
     },
     {
@@ -103,6 +113,7 @@ export function buildDemoData() {
       city: "Москва",
       sport_type: "cycling",
       tags: ["шоссе", "темп", "тренировки"],
+      status: "active",
       created_at: createdAt
     }
   ];
@@ -115,6 +126,7 @@ export function buildDemoData() {
       username: "lena_pedals",
       first_name: "Лена",
       photo_url: null,
+      global_role: "verified_organizer",
       cycling_level: "intermediate",
       bike_type: "road",
       preferred_pace_min: 24,
@@ -127,6 +139,7 @@ export function buildDemoData() {
       username: "max_gravel",
       first_name: "Макс",
       photo_url: null,
+      global_role: "verified_organizer",
       cycling_level: "advanced",
       bike_type: "gravel",
       preferred_pace_min: 22,
@@ -139,10 +152,24 @@ export function buildDemoData() {
       username: "anya_city",
       first_name: "Аня",
       photo_url: null,
+      global_role: "rider",
       cycling_level: "beginner",
       bike_type: "city",
       preferred_pace_min: 14,
       preferred_pace_max: 19,
+      created_at: createdAt
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000005",
+      telegram_id: "1005",
+      username: "ivan_rider",
+      first_name: "Иван",
+      photo_url: null,
+      global_role: "rider",
+      cycling_level: "casual",
+      bike_type: "any",
+      preferred_pace_min: 16,
+      preferred_pace_max: 23,
       created_at: createdAt
     }
   ];
@@ -152,28 +179,28 @@ export function buildDemoData() {
       id: "50000000-0000-4000-8000-000000000001",
       club_id: clubs[0].id,
       user_id: users[1].id,
-      role: "admin",
+      role: "club_owner",
       created_at: createdAt
     },
     {
       id: "50000000-0000-4000-8000-000000000002",
       club_id: clubs[2].id,
       user_id: users[1].id,
-      role: "organizer",
+      role: "club_organizer",
       created_at: createdAt
     },
     {
       id: "50000000-0000-4000-8000-000000000003",
       club_id: clubs[1].id,
       user_id: users[2].id,
-      role: "organizer",
+      role: "club_admin",
       created_at: createdAt
     },
     {
       id: "50000000-0000-4000-8000-000000000004",
       club_id: clubs[3].id,
       user_id: users[3].id,
-      role: "admin",
+      role: "club_owner",
       created_at: createdAt
     }
   ];
@@ -529,6 +556,87 @@ export function buildDemoData() {
     }
   ];
 
+  const routes: Route[] = [
+    {
+      id: "60000000-0000-4000-8000-000000000001",
+      title: "Набережные от Парка Горького",
+      source_type: "demo",
+      original_url: "https://www.openstreetmap.org/#map=13/55.7298/37.6037",
+      file_name: null,
+      geometry_geojson: {
+        type: "LineString",
+        coordinates: [
+          [37.6037, 55.7298],
+          [37.5993, 55.7337],
+          [37.6078, 55.7422],
+          [37.6285, 55.752],
+          [37.6125, 55.744],
+          [37.6037, 55.7298]
+        ]
+      },
+      encoded_polyline: null,
+      distance_km: 22,
+      elevation_gain_m: 80,
+      bbox: [37.5993, 55.7298, 37.6285, 55.752],
+      created_by_user_id: demoUser.id,
+      created_at: createdAt
+    },
+    {
+      id: "60000000-0000-4000-8000-000000000002",
+      title: "Гравел до Лосиного острова",
+      source_type: "demo",
+      original_url: null,
+      file_name: null,
+      geometry_geojson: {
+        type: "LineString",
+        coordinates: [
+          [37.6788, 55.7941],
+          [37.701, 55.804],
+          [37.733, 55.812],
+          [37.765, 55.806],
+          [37.7813, 55.7869],
+          [37.6788, 55.7941]
+        ]
+      },
+      encoded_polyline: null,
+      distance_km: 48,
+      elevation_gain_m: 140,
+      bbox: [37.6788, 55.7869, 37.7813, 55.812],
+      created_by_user_id: users[2].id,
+      created_at: createdAt
+    },
+    {
+      id: "60000000-0000-4000-8000-000000000003",
+      title: "Парк Горького — Воробьевы",
+      source_type: "demo",
+      original_url: "https://www.openstreetmap.org/#map=13/55.7104/37.5426",
+      file_name: null,
+      geometry_geojson: {
+        type: "LineString",
+        coordinates: [
+          [37.6037, 55.7298],
+          [37.584, 55.7206],
+          [37.5602, 55.715],
+          [37.5426, 55.7104],
+          [37.565, 55.7185],
+          [37.6037, 55.7298]
+        ]
+      },
+      encoded_polyline: null,
+      distance_km: 20,
+      elevation_gain_m: 110,
+      bbox: [37.5426, 55.7104, 37.6037, 55.7298],
+      created_by_user_id: users[3].id,
+      created_at: createdAt
+    }
+  ];
+
+  rides[0].route_id = routes[0].id;
+  rides[0].route_url = routes[0].original_url;
+  rides[3].route_id = routes[1].id;
+  rides[6].route_id = routes[2].id;
+  rides[6].route_url = routes[2].original_url;
+
   const registrations: RideRegistration[] = [
     {
       id: "30000000-0000-4000-8000-000000000001",
@@ -667,5 +775,123 @@ export function buildDemoData() {
     }
   ];
 
-  return { clubs, users, clubMemberships, rides, registrations, mapPoints };
+  const clubApplications: ClubApplication[] = [
+    {
+      id: "70000000-0000-4000-8000-000000000001",
+      applicant_user_id: users[3].id,
+      proposed_name: "River Slow Roll",
+      proposed_slug: "river-slow-roll",
+      description: "Медленные городские заезды вдоль воды для тех, кто не хочет гонку.",
+      telegram_url: "https://t.me/river_slow_roll",
+      proof_text: "Ведем чат на 180 человек, регулярно собираем вечерние выезды.",
+      proof_links: ["https://t.me/river_slow_roll"],
+      city: "Москва",
+      tags: ["город", "новичкам", "no-drop"],
+      status: "pending",
+      admin_comment: null,
+      reviewed_by_user_id: null,
+      reviewed_at: null,
+      created_at: createdAt
+    },
+    {
+      id: "70000000-0000-4000-8000-000000000002",
+      applicant_user_id: users[2].id,
+      proposed_name: "North Gravel Sundays",
+      proposed_slug: "north-gravel-sundays",
+      description: "Воскресные гравел-маршруты на севере Москвы и области.",
+      telegram_url: "https://t.me/north_gravel_sundays",
+      proof_text: "Есть открытые отчеты и регулярные GPX-треки.",
+      proof_links: ["https://t.me/north_gravel_sundays"],
+      city: "Москва",
+      tags: ["гравел", "выходные", "длинные"],
+      status: "pending",
+      admin_comment: null,
+      reviewed_by_user_id: null,
+      reviewed_at: null,
+      created_at: createdAt
+    },
+    {
+      id: "70000000-0000-4000-8000-000000000003",
+      applicant_user_id: users[1].id,
+      proposed_name: "Old Track Archive",
+      proposed_slug: "old-track-archive",
+      description: "Архивный клуб без активных стартов.",
+      telegram_url: "https://t.me/old_track_archive",
+      proof_text: "Активности сейчас нет.",
+      proof_links: [],
+      city: "Москва",
+      tags: ["архив"],
+      status: "rejected",
+      admin_comment: "Нужно показать регулярные живые старты.",
+      reviewed_by_user_id: demoUser.id,
+      reviewed_at: createdAt,
+      created_at: createdAt
+    }
+  ];
+
+  const reports: ModerationReport[] = [
+    {
+      id: "80000000-0000-4000-8000-000000000001",
+      reporter_user_id: users[3].id,
+      target_type: "ride",
+      target_id: rides[4].id,
+      reason: "В описании не хватает предупреждения о спортивном темпе.",
+      status: "open",
+      admin_comment: null,
+      created_at: createdAt
+    }
+  ];
+
+  const notifications: Notification[] = [
+    {
+      id: "90000000-0000-4000-8000-000000000001",
+      user_id: users[3].id,
+      type: "club_application",
+      title: "Заявка на клуб отправлена",
+      body: "River Slow Roll ждет модерации. Обычно это занимает немного времени.",
+      entity_type: "club_application",
+      entity_id: clubApplications[0].id,
+      read_at: null,
+      created_at: createdAt
+    },
+    {
+      id: "90000000-0000-4000-8000-000000000002",
+      user_id: demoUser.id,
+      type: "admin",
+      title: "Есть новые заявки",
+      body: "Проверьте заявки на создание клубов в админке.",
+      entity_type: "club_application",
+      entity_id: clubApplications[0].id,
+      read_at: null,
+      created_at: createdAt
+    }
+  ];
+
+  const auditLogs: AuditLog[] = [
+    {
+      id: "91000000-0000-4000-8000-000000000001",
+      actor_user_id: demoUser.id,
+      action: "seed_demo_loaded",
+      entity_type: "system",
+      entity_id: "demo",
+      old_value: null,
+      new_value: { clubs: clubs.length, rides: rides.length },
+      created_at: createdAt
+    }
+  ];
+
+  return {
+    clubs,
+    users,
+    clubMemberships,
+    rides,
+    registrations,
+    mapPoints,
+    routes,
+    routeWaypoints: [],
+    clubApplications,
+    reports,
+    notifications,
+    auditLogs
+  };
 }

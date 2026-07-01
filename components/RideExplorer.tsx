@@ -28,7 +28,9 @@ function matchesFilter(ride: RideWithClub, filter: QuickFilter | null) {
   if (filter === "Сегодня") return sameDay(rideDate, today);
   if (filter === "Завтра") return sameDay(rideDate, tomorrow);
   if (filter === "Выходные") return [0, 6].includes(rideDate.getDay());
-  if (filter === "Новичкам") return ride.no_drop && ["beginner", "casual"].includes(ride.level);
+  if (filter === "Новичкам") return ride.no_drop && ["beginner", "casual", "easy"].includes(ride.level);
+  if (filter === "No-drop") return ride.no_drop;
+  if (filter === "Есть маршрут") return Boolean(ride.route || ride.route_url);
   if (filter === "Коферайды") return ride.ride_type === "coffee";
   if (filter === "Шоссе") return ride.ride_type === "road" || ride.bike_type === "road";
   if (filter === "Гравел") return ride.ride_type === "gravel" || ride.bike_type === "gravel";

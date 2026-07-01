@@ -4,12 +4,13 @@ import { Bell, HandHeart, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/Badge";
 import { ClubAvatar } from "@/components/ClubAvatar";
 import { RideCard } from "@/components/RideCard";
+import { demoUser } from "@/lib/demo-data";
 import { getClubPageData } from "@/lib/db/repository";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClubDetailPage({ params }: { params: { slug: string } }) {
-  const data = await getClubPageData(params.slug);
+  const data = await getClubPageData(params.slug, demoUser.id);
   if (!data) {
     notFound();
   }
@@ -46,6 +47,14 @@ export default async function ClubDetailPage({ params }: { params: { slug: strin
             <MessageCircle size={17} />
             Telegram клуба
           </a>
+        )}
+        {data.canManage && (
+          <Link
+            href={`/clubs/${club.slug}/manage`}
+            className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-app-stroke bg-white text-sm font-bold"
+          >
+            Управление клубом
+          </Link>
         )}
       </header>
 

@@ -12,6 +12,9 @@ export default async function ProfilePage() {
         user={data.user}
         registeredRides={data.registeredRides}
         createdRides={data.createdRides}
+        clubs={data.clubs}
+        applications={data.applications}
+        notifications={data.notifications}
       />
     </div>
   );

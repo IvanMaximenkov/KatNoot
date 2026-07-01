@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Map as LeafletMap } from "leaflet";
-import { Crosshair, LocateFixed, X } from "lucide-react";
+import { Crosshair, Layers, LocateFixed, X } from "lucide-react";
 import { FilterChips } from "@/components/FilterChips";
 import { RideCard } from "@/components/RideCard";
+import { lineStringToPoints } from "@/lib/geo";
+import { demoCyclingLines, getMapTileConfig } from "@/lib/map-config";
 import { bikeMarkerHtml } from "@/lib/map-markers";
 import type { QuickFilter } from "@/lib/labels";
-import type { RideWithClub } from "@/lib/types";
+import type { MapPoint, RideWithClub } from "@/lib/types";
 
 function matchesFilter(ride: RideWithClub, filter: QuickFilter | null) {
   if (!filter) return true;
@@ -22,7 +24,9 @@ function matchesFilter(ride: RideWithClub, filter: QuickFilter | null) {
   if (filter === "Сегодня") return sameDay(today);
   if (filter === "Завтра") return sameDay(tomorrow);
   if (filter === "Выходные") return [0, 6].includes(date.getDay());
-  if (filter === "Новичкам") return ride.no_drop && ["beginner", "casual"].includes(ride.level);
+  if (filter === "Новичкам") return ride.no_drop && ["beginner", "casual", "easy"].includes(ride.level);
+  if (filter === "No-drop") return ride.no_drop;
+  if (filter === "Есть маршрут") return Boolean(ride.route || ride.route_url);
   if (filter === "Коферайды") return ride.ride_type === "coffee";
   if (filter === "Шоссе") return ride.ride_type === "road" || ride.bike_type === "road";
   if (filter === "Гравел") return ride.ride_type === "gravel" || ride.bike_type === "gravel";
@@ -30,13 +34,22 @@ function matchesFilter(ride: RideWithClub, filter: QuickFilter | null) {
   return true;
 }
 
-export function MapView({ rides }: { rides: RideWithClub[] }) {
+type LayerKey = "rides" | "bikeLanes" | "bikeRoutes" | "aLanes" | "points";
+
+export function MapView({ rides, mapPoints }: { rides: RideWithClub[]; mapPoints: MapPoint[] }) {
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const [selectedRide, setSelectedRide] = useState<RideWithClub | null>(null);
   const [activeFilter, setActiveFilter] = useState<QuickFilter | null>(null);
   const [geoMessage, setGeoMessage] = useState("Москва по умолчанию");
   const [mapReady, setMapReady] = useState(false);
+  const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
+    rides: true,
+    bikeLanes: true,
+    bikeRoutes: true,
+    aLanes: true,
+    points: true
+  });
   const filteredRides = useMemo(
     () => rides.filter((ride) => matchesFilter(ride, activeFilter)),
     [rides, activeFilter]
@@ -52,6 +65,7 @@ export function MapView({ rides }: { rides: RideWithClub[] }) {
         return;
       }
 
+      const tile = getMapTileConfig();
       const map = L.map(mapNodeRef.current, {
         zoomControl: false,
         attributionControl: false
@@ -60,11 +74,12 @@ export function MapView({ rides }: { rides: RideWithClub[] }) {
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.control
         .attribution({ position: "bottomleft", prefix: false })
-        .addAttribution("© OpenStreetMap")
+        .addAttribution(tile.attribution)
         .addTo(map);
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19
+      L.tileLayer(tile.url, {
+        maxZoom: 19,
+        attribution: tile.attribution
       }).addTo(map);
 
       mapRef.current = map;
@@ -86,35 +101,94 @@ export function MapView({ rides }: { rides: RideWithClub[] }) {
 
   useEffect(() => {
     let cancelled = false;
-    const markerLayers: Array<{ remove: () => void }> = [];
+    const leafletLayers: Array<{ remove: () => void }> = [];
 
-    async function renderMarkers() {
+    async function renderLayers() {
       const L = await import("leaflet");
       const map = mapRef.current;
       if (!map || !mapReady || cancelled) {
         return;
       }
 
-      filteredRides.forEach((ride) => {
-        const icon = L.divIcon({
-          html: bikeMarkerHtml(ride.title),
-          className: "",
-          iconSize: [34, 34],
-          iconAnchor: [17, 17]
+      if (layers.bikeLanes) {
+        demoCyclingLines.bikeLanes.forEach((line) => {
+          leafletLayers.push(
+            L.polyline(line as [number, number][], { color: "#143a8b", weight: 5, opacity: 0.75 }).addTo(map)
+          );
         });
-        const marker = L.marker([ride.start_lat, ride.start_lng], { icon }).addTo(map);
-        marker.on("click", () => setSelectedRide(ride));
-        markerLayers.push(marker);
-      });
+      }
+
+      if (layers.bikeRoutes) {
+        demoCyclingLines.bikeRoutes.forEach((line) => {
+          leafletLayers.push(
+            L.polyline(line as [number, number][], { color: "#15803d", weight: 4, opacity: 0.75, dashArray: "8 8" }).addTo(map)
+          );
+        });
+      }
+
+      if (layers.aLanes) {
+        demoCyclingLines.aLanes.forEach((line) => {
+          leafletLayers.push(
+            L.polyline(line as [number, number][], { color: "#0ea5e9", weight: 4, opacity: 0.75 }).addTo(map)
+          );
+        });
+      }
+
+      if (layers.points) {
+        mapPoints.forEach((point) => {
+          leafletLayers.push(
+            L.circleMarker([point.lat, point.lng], {
+              radius: 6,
+              color: "#0f172a",
+              fillColor: point.type === "dangerous_place" || point.type === "warning" ? "#f97316" : "#38bdf8",
+              fillOpacity: 0.85,
+              weight: 2
+            })
+              .bindPopup(`<strong>${point.title}</strong><br>${point.description ?? ""}`)
+              .addTo(map)
+          );
+        });
+      }
+
+      if (layers.rides) {
+        filteredRides.forEach((ride) => {
+          const icon = L.divIcon({
+            html: bikeMarkerHtml(ride.title),
+            className: "",
+            iconSize: [34, 34],
+            iconAnchor: [17, 17]
+          });
+          const marker = L.marker([ride.start_lat, ride.start_lng], { icon }).addTo(map);
+          marker.on("click", () => setSelectedRide(ride));
+          leafletLayers.push(marker);
+        });
+      }
+
+      if (selectedRide?.route?.geometry_geojson) {
+        const routePoints = lineStringToPoints(selectedRide.route.geometry_geojson);
+        const latLngs = routePoints.map((point) => [point.lat, point.lng] as [number, number]);
+        if (latLngs.length > 1) {
+          leafletLayers.push(
+            L.polyline(latLngs, {
+              color: "#ef4444",
+              weight: 6,
+              opacity: 0.95,
+              lineCap: "round",
+              lineJoin: "round"
+            }).addTo(map)
+          );
+          map.fitBounds(latLngs, { padding: [40, 40] });
+        }
+      }
     }
 
-    renderMarkers();
+    renderLayers();
 
     return () => {
       cancelled = true;
-      markerLayers.forEach((marker) => marker.remove());
+      leafletLayers.forEach((layer) => layer.remove());
     };
-  }, [filteredRides, mapReady]);
+  }, [filteredRides, layers, mapPoints, mapReady, selectedRide]);
 
   function locateUser() {
     if (!navigator.geolocation) {
@@ -131,6 +205,10 @@ export function MapView({ rides }: { rides: RideWithClub[] }) {
     );
   }
 
+  function toggleLayer(layer: LayerKey) {
+    setLayers((current) => ({ ...current, [layer]: !current[layer] }));
+  }
+
   return (
     <div className="relative h-[calc(var(--tg-viewport-height)-76px)] min-h-screen overflow-hidden bg-app-bg">
       <div ref={mapNodeRef} className="absolute inset-0 z-0" />
@@ -140,9 +218,9 @@ export function MapView({ rides }: { rides: RideWithClub[] }) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-normal text-app-accent">
-                Карта Москвы
+                Велокарта Москвы
               </p>
-              <h1 className="text-2xl font-black">Старты заездов</h1>
+              <h1 className="text-2xl font-black">Старты и маршруты</h1>
             </div>
             <button
               type="button"
@@ -158,9 +236,16 @@ export function MapView({ rides }: { rides: RideWithClub[] }) {
             onChange={setActiveFilter}
             className="mt-4"
           />
-          <div className="mt-2 inline-flex items-center gap-2 rounded-lg bg-app-card px-3 py-2 text-xs font-semibold text-app-muted shadow-soft">
-            <Crosshair size={14} />
-            {geoMessage}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-app-card px-3 py-2 text-xs font-semibold text-app-muted shadow-soft">
+              <Crosshair size={14} />
+              {geoMessage}
+            </div>
+            <LayerButton active={layers.rides} onClick={() => toggleLayer("rides")} label="Заезды" />
+            <LayerButton active={layers.bikeLanes} onClick={() => toggleLayer("bikeLanes")} label="Вело" />
+            <LayerButton active={layers.bikeRoutes} onClick={() => toggleLayer("bikeRoutes")} label="Маршруты" />
+            <LayerButton active={layers.aLanes} onClick={() => toggleLayer("aLanes")} label="А-полосы" />
+            <LayerButton active={layers.points} onClick={() => toggleLayer("points")} label="Точки" />
           </div>
         </div>
       </div>
@@ -181,5 +266,28 @@ export function MapView({ rides }: { rides: RideWithClub[] }) {
         </div>
       )}
     </div>
+  );
+}
+
+function LayerButton({
+  active,
+  onClick,
+  label
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold shadow-soft ${
+        active ? "bg-app-accent text-app-accentText" : "bg-app-card text-app-muted"
+      }`}
+    >
+      <Layers size={13} />
+      {label}
+    </button>
   );
 }

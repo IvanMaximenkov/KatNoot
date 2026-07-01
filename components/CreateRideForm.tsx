@@ -4,8 +4,14 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 import { Building2, Check, Copy, ExternalLink, Loader2, LocateFixed, Send, UserRound } from "lucide-react";
+import { ExternalRouteInput } from "@/components/ExternalRouteInput";
+import { GpxUpload } from "@/components/GpxUpload";
+import { ManualRouteBuilder } from "@/components/ManualRouteBuilder";
+import { RoutePreviewMap } from "@/components/RoutePreviewMap";
+import { RouteSummary } from "@/components/RouteSummary";
 import { bikeTypeLabels, levelLabels, rideTypeLabels } from "@/lib/labels";
 import { formatDateInputValue, rideShareText } from "@/lib/format";
+import { getMapTileConfig } from "@/lib/map-config";
 import { bikeMarkerHtml } from "@/lib/map-markers";
 import { hapticFeedback } from "@/lib/telegram/webapp";
 import type {
@@ -14,6 +20,7 @@ import type {
   ClubMembership,
   CyclingLevel,
   RideType,
+  RouteDraft,
   RideWithClub,
   User
 } from "@/lib/types";
@@ -27,7 +34,13 @@ type SubmitState =
 const levelOptions = Object.entries(levelLabels) as Array<[CyclingLevel, string]>;
 const bikeOptions = Object.entries(bikeTypeLabels) as Array<[BikeType, string]>;
 const rideTypeOptions = Object.entries(rideTypeLabels) as Array<[RideType, string]>;
-const organizerRoles = new Set<ClubMembership["role"]>(["admin", "organizer"]);
+const organizerRoles = new Set<ClubMembership["role"]>([
+  "club_owner",
+  "club_admin",
+  "club_organizer",
+  "admin",
+  "organizer"
+]);
 const defaultStartPoint = { lat: 55.7298, lng: 37.6037 };
 
 function defaultDate() {
@@ -52,6 +65,8 @@ export function CreateRideForm({
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [selectedClubId, setSelectedClubId] = useState("");
   const [startPoint, setStartPoint] = useState(defaultStartPoint);
+  const [routeDraft, setRouteDraft] = useState<RouteDraft | null>(null);
+  const [routeMode, setRouteMode] = useState<"gpx" | "manual" | "external">("gpx");
   const appUrl =
     typeof window === "undefined"
       ? process.env.NEXT_PUBLIC_APP_URL
@@ -59,6 +74,9 @@ export function CreateRideForm({
 
   const initialDate = useMemo(() => defaultDate(), []);
   const organizerClubs = useMemo(() => {
+    if (currentUser.global_role === "super_admin") {
+      return clubs;
+    }
     const allowedClubIds = new Set(
       memberships
         .filter((membership) => membership.user_id === currentUser.id && organizerRoles.has(membership.role))
@@ -66,7 +84,7 @@ export function CreateRideForm({
     );
 
     return clubs.filter((club) => allowedClubIds.has(club.id));
-  }, [clubs, currentUser.id, memberships]);
+  }, [clubs, currentUser.global_role, currentUser.id, memberships]);
   const selectedClub = organizerClubs.find((club) => club.id === selectedClubId) ?? null;
 
   useEffect(() => {
@@ -139,7 +157,12 @@ export function CreateRideForm({
         : null,
       rules: String(formData.get("rules") || "") || null,
       what_to_bring: String(formData.get("what_to_bring") || "") || null,
-      route_url: String(formData.get("route_url") || "") || null,
+      route_id: null,
+      route_payload: routeDraft ?? undefined,
+      route_url:
+        routeDraft?.source_type === "external_url"
+          ? routeDraft.original_url
+          : String(formData.get("route_url") || "") || null,
       telegram_chat_url: String(formData.get("telegram_chat_url") || "") || null
     };
 
@@ -162,6 +185,7 @@ export function CreateRideForm({
     form.reset();
     setSelectedClubId("");
     setStartPoint(defaultStartPoint);
+    setRouteDraft(null);
   }
 
   async function copyShareText(text: string) {
@@ -403,6 +427,37 @@ export function CreateRideForm({
       </div>
 
       <div className="rounded-lg border border-app-stroke bg-app-card p-4 shadow-soft">
+        <h2 className="text-base font-black">Маршрут</h2>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {[
+            ["gpx", "GPX"],
+            ["manual", "Вручную"],
+            ["external", "Ссылка"]
+          ].map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setRouteMode(mode as typeof routeMode)}
+              className={`h-10 rounded-lg text-sm font-bold ${
+                routeMode === mode
+                  ? "bg-app-accent text-app-accentText"
+                  : "border border-app-stroke bg-white text-app-muted"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 space-y-3">
+          {routeMode === "gpx" && <GpxUpload onRoute={setRouteDraft} />}
+          {routeMode === "manual" && <ManualRouteBuilder onRoute={setRouteDraft} />}
+          {routeMode === "external" && <ExternalRouteInput onRoute={setRouteDraft} />}
+          <RouteSummary route={routeDraft} />
+          <RoutePreviewMap route={routeDraft} />
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-app-stroke bg-app-card p-4 shadow-soft">
         <h2 className="text-base font-black">Описание</h2>
         <label className="mt-4 block text-sm font-bold" htmlFor="description">
           Что будет
@@ -442,7 +497,7 @@ export function CreateRideForm({
         <h2 className="text-base font-black">Ссылки и финиш</h2>
         <div className="mt-4 grid grid-cols-1 gap-4">
           <label className="block text-sm font-bold" htmlFor="route_url">
-            Ссылка на маршрут
+            Ссылка на маршрут, если не загружали GPX
             <input
               id="route_url"
               name="route_url"
@@ -520,8 +575,10 @@ function StartPointPicker({
         attributionControl: false
       }).setView([initialPoint.lat, initialPoint.lng], 13);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19
+      const tile = getMapTileConfig();
+      L.tileLayer(tile.url, {
+        maxZoom: 19,
+        attribution: tile.attribution
       }).addTo(map);
 
       const marker = L.marker([initialPoint.lat, initialPoint.lng], {

@@ -5,8 +5,10 @@ import {
   ExternalLink,
   MapPin,
   MessageCircle,
+  Pencil,
   Route,
   ShieldCheck,
+  XCircle,
   UserRound,
   Users
 } from "lucide-react";
@@ -15,7 +17,8 @@ import { ClubAvatar } from "@/components/ClubAvatar";
 import { MapPreview } from "@/components/MapPreview";
 import { RegistrationActions } from "@/components/RegistrationActions";
 import { ShareRideButton } from "@/components/ShareRideButton";
-import { getRideDetail } from "@/lib/db/repository";
+import { canEditRide, getRideDetail } from "@/lib/db/repository";
+import { demoUser } from "@/lib/demo-data";
 import {
   bikeTagLabels,
   levelTagLabels,
@@ -33,6 +36,7 @@ export default async function RideDetailPage({ params }: { params: { id: string 
   }
 
   const beginnerFriendly = isBeginnerFriendly(ride.level, ride.no_drop);
+  const canManageRide = await canEditRide(demoUser.id, ride.id);
 
   return (
     <div className="px-4 pt-4">
@@ -42,6 +46,8 @@ export default async function RideDetailPage({ params }: { params: { id: string 
             {beginnerFriendly ? "Подходит новичкам" : "Не для новичков"}
           </Badge>
           {ride.no_drop && <Badge tone="green">No-drop: никого не бросаем</Badge>}
+          {ride.status === "cancelled" && <Badge tone="red">Отменен</Badge>}
+          {ride.route && <Badge tone="blue">Маршрут на карте</Badge>}
           <Badge tone="blue">{rideTypeLabels[ride.ride_type]}</Badge>
         </div>
         <h1 className="mt-4 text-3xl font-black leading-tight">{ride.title}</h1>
@@ -62,9 +68,38 @@ export default async function RideDetailPage({ params }: { params: { id: string 
           {ride.start_location_name}
         </p>
         <div className="mt-4">
-          <MapPreview lat={ride.start_lat} lng={ride.start_lng} title={ride.title} />
+          <MapPreview
+            lat={ride.start_lat}
+            lng={ride.start_lng}
+            title={ride.title}
+            route={ride.route?.geometry_geojson}
+          />
         </div>
+        {ride.route && (
+          <p className="mt-3 text-xs font-semibold text-app-muted">
+            Карта показывает примерную линию маршрута. Проверяйте дорожную обстановку перед стартом.
+          </p>
+        )}
       </section>
+
+      {canManageRide && (
+        <section className="mt-4 grid grid-cols-2 gap-2">
+          <Link
+            href={`/rides/${ride.id}/edit`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-app-accent text-sm font-bold text-app-accentText"
+          >
+            <Pencil size={16} />
+            Редактировать
+          </Link>
+          <Link
+            href={`/rides/${ride.id}/edit#cancel`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 text-sm font-bold text-rose-700"
+          >
+            <XCircle size={16} />
+            Отменить
+          </Link>
+        </section>
+      )}
 
       <RegistrationActions ride={ride} />
 
@@ -85,6 +120,11 @@ export default async function RideDetailPage({ params }: { params: { id: string 
           <div className="mt-4">
             <p className="text-sm font-bold">Что взять</p>
             <p className="mt-1 text-sm text-app-muted">{ride.what_to_bring}</p>
+          </div>
+        )}
+        {ride.cancellation_reason && (
+          <div className="mt-4 rounded-lg bg-rose-50 p-3 text-sm font-semibold text-rose-700">
+            Причина отмены: {ride.cancellation_reason}
           </div>
         )}
       </section>
@@ -149,6 +189,12 @@ export default async function RideDetailPage({ params }: { params: { id: string 
             <Route size={17} />
             Открыть маршрут
           </a>
+        )}
+        {ride.route && !ride.route_url && (
+          <div className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-app-stroke bg-app-card px-3 text-center text-sm font-bold">
+            <Route size={17} />
+            Маршрут сохранен в Катнуть · {ride.route.distance_km ?? ride.distance_km} км
+          </div>
         )}
         {ride.telegram_chat_url && (
           <a
