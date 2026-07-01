@@ -142,7 +142,7 @@ export function ClubApplicationForm() {
       <button
         type="submit"
         disabled={state.status === "loading"}
-        className="sticky bottom-24 inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-app-accent text-base font-bold text-app-accentText shadow-soft disabled:opacity-70"
+        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-app-accent text-base font-bold text-app-accentText shadow-soft disabled:opacity-70"
       >
         {state.status === "loading" ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
         Отправить заявку

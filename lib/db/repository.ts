@@ -324,7 +324,7 @@ export async function canCreateRide(userId: string, clubId?: string | null) {
     return true;
   }
   if (!clubId) {
-    return user?.global_role === "verified_organizer";
+    return Boolean(user);
   }
   return clubMemberships.some(
     (membership) =>

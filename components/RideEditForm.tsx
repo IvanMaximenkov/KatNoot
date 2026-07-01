@@ -172,7 +172,7 @@ export function RideEditForm({ ride }: { ride: RideWithClub }) {
         <button
           type="submit"
           disabled={state === "saving"}
-          className="sticky bottom-24 inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-app-accent text-base font-bold text-app-accentText shadow-soft disabled:opacity-70"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-app-accent text-base font-bold text-app-accentText shadow-soft disabled:opacity-70"
         >
           {state === "saving" ? <Loader2 className="animate-spin" size={18} /> : state === "saved" ? <Check size={18} /> : <Save size={18} />}
           Сохранить
