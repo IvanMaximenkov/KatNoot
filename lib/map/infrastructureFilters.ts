@@ -1,4 +1,3 @@
-import { isInfrastructureFeatureVisible } from "@/lib/map/zoomRules";
 import type { InfrastructureLayerKey, NormalizedInfrastructureFeature } from "@/types/map";
 
 export type InfrastructureLayerState = Record<InfrastructureLayerKey, boolean>;
@@ -14,12 +13,10 @@ export function infrastructureTypeToLayer(type: NormalizedInfrastructureFeature[
 
 export function filterInfrastructureFeatures(
   features: NormalizedInfrastructureFeature[],
-  layers: InfrastructureLayerState,
-  zoom: number
+  layers: InfrastructureLayerState
 ) {
   return features.filter((feature) => {
     const layer = infrastructureTypeToLayer(feature.type);
-    if (!layers[layer]) return false;
-    return isInfrastructureFeatureVisible(feature, zoom);
+    return layers[layer];
   });
 }

@@ -1,5 +1,3 @@
-import type { NormalizedInfrastructureFeature } from "@/types/map";
-
 export const ZOOM_RULES = {
   cityOverviewMax: 10,
   districtOverviewMin: 11,
@@ -30,22 +28,4 @@ export function showRouteEditorHandles(zoom: number) {
 
 export function selectedRouteUseSimplifiedGeometry(zoom: number) {
   return zoom < ZOOM_RULES.detailedMin;
-}
-
-export function isInfrastructureFeatureVisible(feature: NormalizedInfrastructureFeature, zoom: number) {
-  if (zoom <= ZOOM_RULES.cityOverviewMax) {
-    return feature.type === "bike_lane" && feature.importance === "major";
-  }
-
-  if (zoom < ZOOM_RULES.infrastructureMin) {
-    if (feature.type === "bike_lane") return feature.importance !== "minor";
-    return feature.importance === "major";
-  }
-
-  if (zoom < ZOOM_RULES.detailedMin) {
-    if (feature.type === "bike_lane") return true;
-    return feature.importance !== "minor";
-  }
-
-  return true;
 }

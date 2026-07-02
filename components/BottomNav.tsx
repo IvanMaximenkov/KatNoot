@@ -17,7 +17,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md border-t border-app-stroke bg-app-card/95 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 shadow-[0_-12px_30px_rgb(15_23_42/0.08)] backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto h-[var(--bottom-nav-height)] w-full max-w-md border-t border-app-stroke bg-app-card/95 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 shadow-[0_-12px_30px_rgb(15_23_42/0.08)] backdrop-blur">
       <div className="grid grid-cols-5 gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;

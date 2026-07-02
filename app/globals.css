@@ -11,6 +11,7 @@
   --app-accent: 29 124 92;
   --app-accent-text: 255 255 255;
   --tg-viewport-height: 100vh;
+  --bottom-nav-height: calc(72px + env(safe-area-inset-bottom));
 }
 
 * {
@@ -78,11 +79,11 @@ option {
 }
 
 .katnut-map .leaflet-bottom.leaflet-right {
-  bottom: 92px;
+  bottom: 14px;
 }
 
 .katnut-map .leaflet-bottom.leaflet-left {
-  bottom: 78px;
+  bottom: 14px;
 }
 
 .katnut-map .leaflet-control-container {
@@ -92,28 +93,6 @@ option {
 
 .map-tile-soft {
   filter: saturate(0.76) contrast(0.96) brightness(1.035);
-}
-
-.leaflet-control-zoom {
-  overflow: hidden;
-  border: 1px solid rgb(203 213 225 / 0.9) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 24px rgb(15 23 42 / 0.14) !important;
-}
-
-.leaflet-touch .leaflet-control-zoom a,
-.leaflet-control-zoom a {
-  width: 38px !important;
-  height: 38px !important;
-  border: 0 !important;
-  color: #17202a !important;
-  font-size: 24px !important;
-  line-height: 36px !important;
-  background: rgb(255 255 255 / 0.94) !important;
-}
-
-.leaflet-control-zoom a + a {
-  border-top: 1px solid rgb(226 232 240 / 0.95) !important;
 }
 
 .leaflet-control-attribution {

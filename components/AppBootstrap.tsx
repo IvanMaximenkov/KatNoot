@@ -78,6 +78,15 @@ export function AppBootstrap() {
     }
 
     const webApp = getTelegramWebApp();
+    const syncViewportHeight = () => {
+      const viewportHeight = webApp?.viewportStableHeight || webApp?.viewportHeight || window.innerHeight;
+      root.style.setProperty("--tg-viewport-height", `${Math.round(viewportHeight)}px`);
+    };
+
+    syncViewportHeight();
+    window.addEventListener("resize", syncViewportHeight);
+    webApp?.onEvent?.("viewportChanged", syncViewportHeight);
+
     fetch("/api/auth/telegram", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -96,6 +105,11 @@ export function AppBootstrap() {
           "00000000-0000-4000-8000-000000000001"
         );
       });
+
+    return () => {
+      window.removeEventListener("resize", syncViewportHeight);
+      webApp?.offEvent?.("viewportChanged", syncViewportHeight);
+    };
   }, []);
 
   return null;

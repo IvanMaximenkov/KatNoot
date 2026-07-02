@@ -17,7 +17,7 @@ export function RideMapBottomSheet({
   const hasRoute = Boolean(ride.route?.geometry_geojson || ride.route_url);
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-[610] px-3 pb-[calc(env(safe-area-inset-bottom)+84px)]">
+    <div className="absolute inset-x-0 bottom-0 z-[610] px-3 pb-3">
       <section className="mx-auto max-w-md rounded-t-lg border border-white/80 bg-white/95 p-4 shadow-[0_-12px_34px_rgb(15_23_42/0.18)] backdrop-blur-xl">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">

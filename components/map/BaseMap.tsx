@@ -77,10 +77,6 @@ export function BaseMap({
       });
       tileLayer.addTo(map);
 
-      if (interactive) {
-        L.control.zoom({ position: "bottomright" }).addTo(map);
-      }
-
       L.control
         .attribution({ position: "bottomleft", prefix: false })
         .addAttribution(tile.attribution)

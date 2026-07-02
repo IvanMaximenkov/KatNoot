@@ -32,8 +32,21 @@ function importanceOpacity(
   zoom: number,
   base: Record<InfrastructureImportance, number>
 ) {
-  const zoomBoost = zoom >= 15 ? 0.12 : zoom >= 13 ? 0.06 : 0;
+  const zoomBoost = zoom >= 16 ? 0.14 : zoom >= 13 ? 0.08 : 0;
   return Math.min(0.95, base[importance] + zoomBoost);
+}
+
+function zoomLineScale(zoom: number) {
+  const clamped = Math.max(9, Math.min(18, zoom));
+  return 0.68 + ((clamped - 9) / 9) * 0.72;
+}
+
+function scaledWeight(
+  feature: NormalizedInfrastructureFeature,
+  zoom: number,
+  weights: Record<InfrastructureImportance, number>
+) {
+  return Number((importanceWeight(feature, weights) * zoomLineScale(zoom)).toFixed(2));
 }
 
 export function infrastructureLineStyle(
@@ -43,13 +56,13 @@ export function infrastructureLineStyle(
   if (feature.type === "a_lane") {
     return {
       color: MAP_PALETTE.aLane,
-      weight: importanceWeight(feature, { major: 2.5, medium: 1.8, minor: 1.2 }),
-      opacity: zoom <= 10 ? 0.15 : importanceOpacity(feature.importance, zoom, {
-        major: 0.62,
+      weight: scaledWeight(feature, zoom, { major: 2.35, medium: 1.7, minor: 1.15 }),
+      opacity: importanceOpacity(feature.importance, zoom, {
+        major: 0.58,
         medium: 0.48,
-        minor: 0.34
+        minor: 0.36
       }),
-      dashArray: zoom >= 13 ? "7 5" : undefined,
+      dashArray: zoom >= 13 ? "7 5" : "5 6",
       lineCap: "round",
       lineJoin: "round"
     };
@@ -57,10 +70,10 @@ export function infrastructureLineStyle(
 
   return {
     color: MAP_PALETTE.bikeLane,
-    weight: importanceWeight(feature, { major: 3.5, medium: 2.5, minor: 1.5 }),
+    weight: scaledWeight(feature, zoom, { major: 3.2, medium: 2.35, minor: 1.55 }),
     opacity: importanceOpacity(feature.importance, zoom, {
-      major: 0.86,
-      medium: 0.72,
+      major: 0.82,
+      medium: 0.68,
       minor: 0.52
     }),
     lineCap: "round",

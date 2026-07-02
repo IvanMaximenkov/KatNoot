@@ -39,7 +39,7 @@ export function CyclingInfrastructureLayer({
       const L = await import("leaflet");
       if (!map || cancelled) return;
 
-      const visibleFeatures = filterInfrastructureFeatures(features, layers, currentZoom);
+      const visibleFeatures = filterInfrastructureFeatures(features, layers);
 
       visibleFeatures.forEach((feature) => {
         const style = infrastructureLineStyle(feature, currentZoom);

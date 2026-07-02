@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Map as LeafletMap } from "leaflet";
-import { ArrowLeft, Layers, LocateFixed, MapPinned, Navigation } from "lucide-react";
+import { ArrowLeft, Layers, LocateFixed, MapPinned, Minus, Navigation, Plus } from "lucide-react";
 import { BaseMap } from "@/components/map/BaseMap";
 import { CyclingInfrastructureLayer } from "@/components/map/CyclingInfrastructureLayer";
 import { DEFAULT_MAP_LAYERS, MapLayerControls, type MapLayerState } from "@/components/map/MapLayerControls";
@@ -17,11 +17,6 @@ import { MAP_STORAGE_KEYS, MOSCOW_MAP_DEFAULT_VIEW } from "@/lib/map/mapConfig";
 import type { MapPoint, RideWithClub } from "@/lib/types";
 
 type MapRideFilter =
-  | "today"
-  | "tomorrow"
-  | "weekend"
-  | "beginner"
-  | "noDrop"
   | "hasRoute"
   | "nearby"
   | "road"
@@ -29,12 +24,17 @@ type MapRideFilter =
   | "coffee"
   | "night";
 
-const mapRideFilters: Array<{ key: MapRideFilter; label: string }> = [
+type DateFilterMode = "all" | "today" | "tomorrow" | "weekend" | "custom";
+
+const dateFilterOptions: Array<{ key: DateFilterMode; label: string }> = [
+  { key: "all", label: "Все" },
   { key: "today", label: "Сегодня" },
   { key: "tomorrow", label: "Завтра" },
   { key: "weekend", label: "Выходные" },
-  { key: "beginner", label: "Новичкам" },
-  { key: "noDrop", label: "No-drop" },
+  { key: "custom", label: "Период" }
+];
+
+const mapRideFilters: Array<{ key: MapRideFilter; label: string }> = [
   { key: "hasRoute", label: "Есть маршрут" },
   { key: "nearby", label: "Рядом" },
   { key: "road", label: "Шоссе" },
@@ -44,7 +44,7 @@ const mapRideFilters: Array<{ key: MapRideFilter; label: string }> = [
 ];
 
 type UserLocation = { lat: number; lng: number };
-const DEFAULT_MAP_MESSAGE = "Москва, обзор велослоев";
+const DEFAULT_MAP_MESSAGE = "Москва, заезды на карте";
 
 function readStoredLayers() {
   if (typeof window === "undefined") return DEFAULT_MAP_LAYERS;
@@ -59,21 +59,93 @@ function readStoredLayers() {
   }
 }
 
-function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+function dateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateInput(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function endOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function shortDateLabel(date: Date) {
+  return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit" }).format(date);
+}
+
+function rideCountWord(count: number) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "заезд";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "заезда";
+  return "заездов";
+}
+
+function weekendRange(today = new Date()) {
+  const day = today.getDay();
+  const daysUntilSaturday = day === 0 ? -1 : (6 - day + 7) % 7;
+  const start = startOfDay(addDays(today, daysUntilSaturday));
+  return { start, end: endOfDay(addDays(start, 1)) };
+}
+
+function selectedDateRange(mode: DateFilterMode, customFrom: string, customTo: string) {
+  const today = startOfDay(new Date());
+
+  if (mode === "today") {
+    return { start: today, end: endOfDay(today), label: "сегодня" };
+  }
+
+  if (mode === "tomorrow") {
+    const tomorrow = addDays(today, 1);
+    return { start: tomorrow, end: endOfDay(tomorrow), label: "завтра" };
+  }
+
+  if (mode === "weekend") {
+    return { ...weekendRange(today), label: "на выходные" };
+  }
+
+  if (mode === "custom") {
+    const from = parseDateInput(customFrom) ?? today;
+    const to = parseDateInput(customTo) ?? from;
+    const start = startOfDay(from <= to ? from : to);
+    const end = endOfDay(from <= to ? to : from);
+    return {
+      start,
+      end,
+      label: `${shortDateLabel(start)}-${shortDateLabel(end)}`
+    };
+  }
+
+  return { start: null, end: null, label: "всего" };
+}
+
+function rideInDateRange(
+  ride: RideWithClub,
+  range: ReturnType<typeof selectedDateRange>
+) {
+  if (!range.start || !range.end) return true;
+  const rideTime = new Date(ride.date_time).getTime();
+  return rideTime >= range.start.getTime() && rideTime <= range.end.getTime();
 }
 
 function rideMatchesFilter(ride: RideWithClub, filter: MapRideFilter, userLocation: UserLocation | null) {
-  const rideDate = new Date(ride.date_time);
-  const today = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(today.getDate() + 1);
-
-  if (filter === "today") return sameDay(rideDate, today);
-  if (filter === "tomorrow") return sameDay(rideDate, tomorrow);
-  if (filter === "weekend") return [0, 6].includes(rideDate.getDay());
-  if (filter === "beginner") return ride.no_drop && ["beginner", "casual", "easy"].includes(ride.level);
-  if (filter === "noDrop") return ride.no_drop;
   if (filter === "hasRoute") return Boolean(ride.route?.geometry_geojson || ride.route_url);
   if (filter === "road") return ride.ride_type === "road" || ride.bike_type === "road";
   if (filter === "gravel") return ride.ride_type === "gravel" || ride.bike_type === "gravel";
@@ -93,12 +165,15 @@ export function CyclingMap({
   rides: RideWithClub[];
   mapPoints?: MapPoint[];
 }) {
-  const { bikeLanes, aLanes, isLoading, error, unavailableLayers } = useCyclingInfrastructure();
+  const { bikeLanes, aLanes, unavailableLayers } = useCyclingInfrastructure();
   const [map, setMap] = useState<LeafletMap | null>(null);
   const [currentZoom, setCurrentZoom] = useState(MOSCOW_MAP_DEFAULT_VIEW.zoom);
   const [selectedRide, setSelectedRide] = useState<RideWithClub | null>(null);
   const [layers, setLayers] = useState<MapLayerState>(DEFAULT_MAP_LAYERS);
   const [layerSheetOpen, setLayerSheetOpen] = useState(false);
+  const [dateMode, setDateMode] = useState<DateFilterMode>("all");
+  const [customFrom, setCustomFrom] = useState(() => dateInputValue(new Date()));
+  const [customTo, setCustomTo] = useState(() => dateInputValue(addDays(new Date(), 2)));
   const [activeFilters, setActiveFilters] = useState<Set<MapRideFilter>>(() => new Set());
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [showUserLocation, setShowUserLocation] = useState(false);
@@ -116,12 +191,17 @@ export function CyclingMap({
   }, [layers]);
 
   const infrastructureFeatures = useMemo(() => [...bikeLanes, ...aLanes], [aLanes, bikeLanes]);
+  const dateRange = useMemo(
+    () => selectedDateRange(dateMode, customFrom, customTo),
+    [customFrom, customTo, dateMode]
+  );
 
   const filteredRides = useMemo(() => {
     return rides.filter((ride) =>
+      rideInDateRange(ride, dateRange) &&
       [...activeFilters].every((filter) => rideMatchesFilter(ride, filter, userLocation))
     );
-  }, [activeFilters, rides, userLocation]);
+  }, [activeFilters, dateRange, rides, userLocation]);
 
   const handleMapReady = useCallback((leafletMap: LeafletMap | null) => {
     setMap(leafletMap);
@@ -138,6 +218,15 @@ export function CyclingMap({
   const handleSelectRide = useCallback((ride: RideWithClub) => {
     setSelectedRide(ride);
   }, []);
+
+  const zoomMap = useCallback(
+    (direction: 1 | -1) => {
+      if (!map) return;
+      const nextZoom = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), currentZoom + direction * 0.75));
+      map.setZoom(nextZoom, { animate: true });
+    },
+    [currentZoom, map]
+  );
 
   function locateUser(applyNearbyFilter = false) {
     if (!navigator.geolocation) {
@@ -208,15 +297,11 @@ export function CyclingMap({
     };
   }, [map, showUserLocation, userLocation]);
 
-  const infrastructureMessage = isLoading
-    ? "Загружаем OSM велослои"
-    : error
-      ? `Часть слоев недоступна: ${error}`
-      : `${bikeLanes.length} велодорожек · ${aLanes.length} А-полос`;
-  const mapSubtitle = message === DEFAULT_MAP_MESSAGE ? infrastructureMessage : message;
+  const rideCountMessage = `${filteredRides.length} ${rideCountWord(filteredRides.length)} ${dateRange.label}`;
+  const mapSubtitle = message === DEFAULT_MAP_MESSAGE ? rideCountMessage : `${rideCountMessage} · ${message}`;
 
   return (
-    <div className="katnut-map relative h-[calc(var(--tg-viewport-height)-76px)] min-h-[560px] overflow-hidden bg-[#eef2ef]">
+    <div className="katnut-map relative h-[calc(var(--tg-viewport-height)-var(--bottom-nav-height))] min-h-[420px] overflow-hidden bg-[#eef2ef]">
       <BaseMap
         onMapReady={handleMapReady}
         onZoomChange={handleZoomChange}
@@ -250,7 +335,7 @@ export function CyclingMap({
                 <span className="truncate">{mapSubtitle}</span>
               </p>
             </div>
-            <div className="flex shrink-0 gap-1.5">
+            <div className="grid shrink-0 grid-cols-4 gap-1.5">
               <button
                 type="button"
                 onClick={() => setLayerSheetOpen(true)}
@@ -267,8 +352,60 @@ export function CyclingMap({
               >
                 <LocateFixed size={17} />
               </button>
+              <button
+                type="button"
+                onClick={() => zoomMap(1)}
+                title="Приблизить"
+                className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-[0_8px_18px_rgb(15_23_42/0.12)]"
+              >
+                <Plus size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => zoomMap(-1)}
+                title="Отдалить"
+                className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-[0_8px_18px_rgb(15_23_42/0.12)]"
+              >
+                <Minus size={18} />
+              </button>
             </div>
           </div>
+
+          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar">
+            {dateFilterOptions.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => setDateMode(filter.key)}
+                className={`h-8 shrink-0 rounded-lg border px-3 text-xs font-bold ${
+                  dateMode === filter.key
+                    ? "border-slate-950 bg-slate-950 text-white"
+                    : "border-slate-200 bg-white text-slate-600"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          {dateMode === "custom" && (
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              <input
+                aria-label="Дата начала"
+                type="date"
+                value={customFrom}
+                onChange={(event) => setCustomFrom(event.target.value)}
+                className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700"
+              />
+              <input
+                aria-label="Дата конца"
+                type="date"
+                value={customTo}
+                onChange={(event) => setCustomTo(event.target.value)}
+                className="h-9 min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700"
+              />
+            </div>
+          )}
 
           <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar">
             {mapRideFilters.map((filter) => (
@@ -329,10 +466,6 @@ export function CyclingMap({
         onChange={setLayers}
         onClose={() => setLayerSheetOpen(false)}
       />
-
-      <div className="pointer-events-none absolute bottom-[82px] right-3 z-[530] rounded-lg border border-white/80 bg-white/90 px-2 py-1 text-[10px] font-black text-slate-500 shadow-[0_8px_20px_rgb(15_23_42/0.12)]">
-        z {currentZoom.toFixed(1)}
-      </div>
     </div>
   );
 }

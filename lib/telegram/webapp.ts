@@ -8,8 +8,12 @@ type TelegramWebApp = {
     user?: TelegramMiniAppUser;
   };
   themeParams?: Record<string, string | undefined>;
+  viewportHeight?: number;
+  viewportStableHeight?: number;
   ready: () => void;
   expand: () => void;
+  onEvent?: (eventType: "viewportChanged", eventHandler: () => void) => void;
+  offEvent?: (eventType: "viewportChanged", eventHandler: () => void) => void;
   HapticFeedback?: {
     impactOccurred: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void;
     notificationOccurred: (type: "error" | "success" | "warning") => void;

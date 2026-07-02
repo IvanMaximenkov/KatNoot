@@ -68,7 +68,7 @@ export function MapLayerControls({
   const visibleOptions = layerOptions.filter((option) => option.key !== "selectedRideRoute" || hasSelectedRide);
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-[620] px-3 pb-[calc(env(safe-area-inset-bottom)+86px)]">
+    <div className="absolute inset-x-0 bottom-0 z-[620] px-3 pb-3">
       <div className="mx-auto max-w-md rounded-t-lg border border-white/80 bg-white/95 p-3 shadow-[0_-12px_34px_rgb(15_23_42/0.18)] backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3">
           <div>
