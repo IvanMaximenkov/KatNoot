@@ -2,12 +2,11 @@
 
 import { useEffect } from "react";
 import type { Map as LeafletMap } from "leaflet";
-import { escapeHtml } from "@/lib/map-markers";
 import { filterInfrastructureFeatures, type InfrastructureLayerState } from "@/lib/map/infrastructureFilters";
-import { infrastructureLineStyle, infrastructurePointColor, MAP_PALETTE } from "@/lib/map/mapStyles";
-import type { CyclingInfrastructureFeature } from "@/lib/map/cyclingInfrastructure";
+import { infrastructureLineStyle } from "@/lib/map/mapStyles";
+import type { NormalizedInfrastructureFeature } from "@/types/map";
 
-function lineCoordinates(feature: CyclingInfrastructureFeature) {
+function lineCoordinates(feature: NormalizedInfrastructureFeature) {
   if (feature.geometry.type === "LineString") {
     return [feature.geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number])];
   }
@@ -28,7 +27,7 @@ export function CyclingInfrastructureLayer({
   currentZoom
 }: {
   map: LeafletMap | null;
-  features: CyclingInfrastructureFeature[];
+  features: NormalizedInfrastructureFeature[];
   layers: InfrastructureLayerState;
   currentZoom: number;
 }) {
@@ -43,58 +42,25 @@ export function CyclingInfrastructureLayer({
       const visibleFeatures = filterInfrastructureFeatures(features, layers, currentZoom);
 
       visibleFeatures.forEach((feature) => {
-        if (feature.geometry.type === "Point") {
-          const [lng, lat] = feature.geometry.coordinates;
-          const color = infrastructurePointColor(feature.type);
-          renderedLayers.push(
-            L.circleMarker([lat, lng], {
-              radius: currentZoom >= 15 ? 6 : 4.8,
-              color: MAP_PALETTE.halo,
-              fillColor: color,
-              fillOpacity: 0.95,
-              pane: "infrastructure-points",
-              weight: 2.4
-            })
-              .bindTooltip(
-                `<strong>${escapeHtml(feature.title ?? "Точка")}</strong>${
-                  feature.description ? `<br>${escapeHtml(feature.description)}` : ""
-                }`,
-                { className: "map-line-tooltip", direction: "top", opacity: 0.95 }
-              )
-              .addTo(map)
-          );
-          return;
-        }
-
         const style = infrastructureLineStyle(feature, currentZoom);
         lineCoordinates(feature).forEach((latLngs) => {
-          renderedLayers.push(
-            L.polyline(latLngs, {
-              color: MAP_PALETTE.halo,
-              weight: style.haloWeight,
-              opacity: feature.importance === "minor" ? 0.5 : 0.72,
-              lineCap: "round",
-              lineJoin: "round",
-              interactive: false,
-              pane: "infrastructure-halo",
-              smoothFactor: currentZoom < 12 ? 2 : 1.2
-            }).addTo(map)
-          );
+          const line = L.polyline(latLngs, {
+            ...style,
+            interactive: currentZoom >= 15,
+            pane: "infrastructure-line",
+            smoothFactor: currentZoom < 13 ? 2.2 : 1.1
+          }).addTo(map);
 
-          renderedLayers.push(
-            L.polyline(latLngs, {
-              ...style,
-              pane: "infrastructure-line",
-              smoothFactor: currentZoom < 12 ? 2 : 1.2
-            })
-              .bindTooltip(feature.title ?? "Велоинфраструктура", {
-                className: "map-line-tooltip",
-                direction: "top",
-                opacity: 0.94,
-                sticky: true
-              })
-              .addTo(map)
-          );
+          if (currentZoom >= 15 && feature.title) {
+            line.bindTooltip(feature.title, {
+              className: "map-line-tooltip",
+              direction: "top",
+              opacity: 0.94,
+              sticky: true
+            });
+          }
+
+          renderedLayers.push(line);
         });
       });
     }

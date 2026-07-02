@@ -1,14 +1,6 @@
 import { randomUUID } from "crypto";
 import { demoUser } from "@/lib/demo-data";
 import { bboxForLine } from "@/lib/geo";
-import {
-  demoCyclingInfrastructure,
-  normalizeCyclingInfrastructureGeoJson,
-  type CyclingInfrastructureFeature,
-  type CyclingInfrastructureImportance,
-  type CyclingInfrastructureSource,
-  type CyclingInfrastructureType
-} from "@/lib/map/cyclingInfrastructure";
 import { simplifyLineString } from "@/lib/map/geojsonUtils";
 import {
   cancelMockRide,
@@ -290,51 +282,6 @@ export async function listRides(options: { includeHidden?: boolean } = {}) {
 export async function listMapPoints() {
   const { mapPoints } = await getBaseData();
   return mapPoints;
-}
-
-type CyclingInfrastructureRow = {
-  id: string;
-  type: CyclingInfrastructureType;
-  title: string | null;
-  description: string | null;
-  geometry_geojson: CyclingInfrastructureFeature["geometry"];
-  importance: CyclingInfrastructureImportance;
-  source: CyclingInfrastructureSource;
-  min_zoom: number | null;
-};
-
-export async function listCyclingInfrastructure(): Promise<CyclingInfrastructureFeature[]> {
-  if (!isUsingSupabase()) {
-    return demoCyclingInfrastructure;
-  }
-
-  try {
-    const rows = await getSupabaseRows<CyclingInfrastructureRow>("cycling_infrastructure", {
-      column: "created_at"
-    });
-    if (!rows?.length) {
-      return demoCyclingInfrastructure;
-    }
-
-    return normalizeCyclingInfrastructureGeoJson({
-      type: "FeatureCollection",
-      features: rows.map((row) => ({
-        type: "Feature",
-        properties: {
-          id: row.id,
-          type: row.type,
-          title: row.title ?? undefined,
-          description: row.description ?? undefined,
-          importance: row.importance,
-          source: row.source,
-          min_zoom: row.min_zoom ?? undefined
-        },
-        geometry: row.geometry_geojson
-      }))
-    });
-  } catch {
-    return demoCyclingInfrastructure;
-  }
 }
 
 export async function listClubMemberships() {

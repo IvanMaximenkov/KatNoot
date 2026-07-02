@@ -230,9 +230,7 @@ option {
 }
 
 .map-layer-swatch--bikeRoutes,
-.map-legend-line--bikeRoutes,
-.map-layer-swatch--cyclingRoutes,
-.map-legend-line--cyclingRoutes {
+.map-legend-line--bikeRoutes {
   height: 2px;
   background: repeating-linear-gradient(
     to right,

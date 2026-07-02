@@ -62,7 +62,7 @@ function normalizeFeature(feature: Feature, index: number): Feature | null {
 }
 
 const inputPath = process.argv[2];
-const outputPath = process.argv[3] ?? "data/demo/cyclingInfrastructure.geojson";
+const outputPath = process.argv[3] ?? "public/data/map/moscow/bike_lanes.geojson";
 
 if (!inputPath) {
   throw new Error("Usage: tsx scripts/import-cycling-geojson.ts input.geojson [output.geojson]");

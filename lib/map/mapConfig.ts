@@ -23,7 +23,7 @@ export const MOSCOW_MAP_BOUNDS: [[number, number], [number, number]] = [
 ];
 
 export const MAP_STORAGE_KEYS = {
-  layers: "katnut.map.layers.v2"
+  layers: "katnut.map.layers.v3"
 } as const;
 
 const osmAttribution =

@@ -1,11 +1,9 @@
 import type { PathOptions } from "leaflet";
-import type { CyclingInfrastructureFeature, CyclingInfrastructureType } from "@/lib/map/cyclingInfrastructure";
-import { lineOpacityForZoom, lineWeightForZoom } from "@/lib/map/zoomRules";
 import type { RideStatus } from "@/lib/types";
+import type { InfrastructureImportance, NormalizedInfrastructureFeature } from "@/types/map";
 
 export const MAP_PALETTE = {
   bikeLane: "#435979",
-  cyclingRoute: "#19745d",
   aLane: "#51bfe0",
   selectedRoute: "#f59e0b",
   selectedRouteAlt: "#12b6a6",
@@ -19,56 +17,55 @@ export const MAP_PALETTE = {
 } as const;
 
 export type InfrastructureLineStyle = PathOptions & {
-  haloWeight: number;
   dashArray?: string;
 };
 
+function importanceWeight(
+  feature: NormalizedInfrastructureFeature,
+  weights: Record<InfrastructureImportance, number>
+) {
+  return weights[feature.importance];
+}
+
+function importanceOpacity(
+  importance: InfrastructureImportance,
+  zoom: number,
+  base: Record<InfrastructureImportance, number>
+) {
+  const zoomBoost = zoom >= 15 ? 0.12 : zoom >= 13 ? 0.06 : 0;
+  return Math.min(0.95, base[importance] + zoomBoost);
+}
+
 export function infrastructureLineStyle(
-  feature: CyclingInfrastructureFeature,
+  feature: NormalizedInfrastructureFeature,
   zoom: number
 ): InfrastructureLineStyle {
-  const baseWeight = feature.importance === "major" ? 3.4 : feature.importance === "medium" ? 2.7 : 2.1;
-  const weight = lineWeightForZoom(baseWeight, zoom);
-
-  if (feature.type === "cycling_route") {
-    return {
-      color: MAP_PALETTE.cyclingRoute,
-      weight,
-      opacity: lineOpacityForZoom(zoom),
-      dashArray: zoom >= 13 ? "5 7" : "3 7",
-      lineCap: "round",
-      lineJoin: "round",
-      haloWeight: weight + 4
-    };
-  }
-
   if (feature.type === "a_lane") {
     return {
       color: MAP_PALETTE.aLane,
-      weight: Math.max(1.5, weight - 0.8),
-      opacity: zoom < 12 ? 0.58 : 0.86,
+      weight: importanceWeight(feature, { major: 2.5, medium: 1.8, minor: 1.2 }),
+      opacity: zoom <= 10 ? 0.15 : importanceOpacity(feature.importance, zoom, {
+        major: 0.62,
+        medium: 0.48,
+        minor: 0.34
+      }),
+      dashArray: zoom >= 13 ? "7 5" : undefined,
       lineCap: "round",
-      lineJoin: "round",
-      haloWeight: weight + 2.4
+      lineJoin: "round"
     };
   }
 
   return {
     color: MAP_PALETTE.bikeLane,
-    weight,
-    opacity: lineOpacityForZoom(zoom),
+    weight: importanceWeight(feature, { major: 3.5, medium: 2.5, minor: 1.5 }),
+    opacity: importanceOpacity(feature.importance, zoom, {
+      major: 0.86,
+      medium: 0.72,
+      minor: 0.52
+    }),
     lineCap: "round",
-    lineJoin: "round",
-    haloWeight: weight + 3.8
+    lineJoin: "round"
   };
-}
-
-export function infrastructurePointColor(type: CyclingInfrastructureType) {
-  if (type === "danger") return MAP_PALETTE.danger;
-  if (type === "repair") return "#0e7490";
-  if (type === "water") return "#0284c7";
-  if (type === "bike_parking") return "#4f5f7d";
-  return MAP_PALETTE.point;
 }
 
 export function rideMarkerClass(status: RideStatus, selected: boolean, full: boolean) {

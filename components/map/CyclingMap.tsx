@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Map as LeafletMap } from "leaflet";
-import { ArrowLeft, Layers, LocateFixed, MapPinned, Navigation, Search } from "lucide-react";
+import { ArrowLeft, Layers, LocateFixed, MapPinned, Navigation } from "lucide-react";
 import { BaseMap } from "@/components/map/BaseMap";
 import { CyclingInfrastructureLayer } from "@/components/map/CyclingInfrastructureLayer";
 import { DEFAULT_MAP_LAYERS, MapLayerControls, type MapLayerState } from "@/components/map/MapLayerControls";
@@ -11,11 +11,7 @@ import { MapLegend } from "@/components/map/MapLegend";
 import { RideMapBottomSheet } from "@/components/map/RideMapBottomSheet";
 import { RideMarkersLayer } from "@/components/map/RideMarkersLayer";
 import { SelectedRideRouteLayer } from "@/components/map/SelectedRideRouteLayer";
-import {
-  demoCyclingInfrastructure,
-  mapPointsToInfrastructureFeatures,
-  type CyclingInfrastructureFeature
-} from "@/lib/map/cyclingInfrastructure";
+import { useCyclingInfrastructure } from "@/hooks/useCyclingInfrastructure";
 import { haversineKm } from "@/lib/map/geojsonUtils";
 import { MAP_STORAGE_KEYS, MOSCOW_MAP_DEFAULT_VIEW } from "@/lib/map/mapConfig";
 import type { MapPoint, RideWithClub } from "@/lib/types";
@@ -48,6 +44,7 @@ const mapRideFilters: Array<{ key: MapRideFilter; label: string }> = [
 ];
 
 type UserLocation = { lat: number; lng: number };
+const DEFAULT_MAP_MESSAGE = "Москва, обзор велослоев";
 
 function readStoredLayers() {
   if (typeof window === "undefined") return DEFAULT_MAP_LAYERS;
@@ -91,13 +88,12 @@ function rideMatchesFilter(ride: RideWithClub, filter: MapRideFilter, userLocati
 
 export function CyclingMap({
   rides,
-  mapPoints,
-  infrastructure = demoCyclingInfrastructure
+  mapPoints: _mapPoints
 }: {
   rides: RideWithClub[];
   mapPoints?: MapPoint[];
-  infrastructure?: CyclingInfrastructureFeature[];
 }) {
+  const { bikeLanes, aLanes, isLoading, error, unavailableLayers } = useCyclingInfrastructure();
   const [map, setMap] = useState<LeafletMap | null>(null);
   const [currentZoom, setCurrentZoom] = useState(MOSCOW_MAP_DEFAULT_VIEW.zoom);
   const [selectedRide, setSelectedRide] = useState<RideWithClub | null>(null);
@@ -105,7 +101,8 @@ export function CyclingMap({
   const [layerSheetOpen, setLayerSheetOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<MapRideFilter>>(() => new Set());
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [message, setMessage] = useState("Москва, обзор велослоев");
+  const [showUserLocation, setShowUserLocation] = useState(false);
+  const [message, setMessage] = useState(DEFAULT_MAP_MESSAGE);
   const [providerError, setProviderError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -118,10 +115,7 @@ export function CyclingMap({
     }
   }, [layers]);
 
-  const allInfrastructure = useMemo(
-    () => [...infrastructure, ...mapPointsToInfrastructureFeatures(mapPoints ?? [])],
-    [infrastructure, mapPoints]
-  );
+  const infrastructureFeatures = useMemo(() => [...bikeLanes, ...aLanes], [aLanes, bikeLanes]);
 
   const filteredRides = useMemo(() => {
     return rides.filter((ride) =>
@@ -159,7 +153,7 @@ export function CyclingMap({
           lng: Number(position.coords.longitude.toFixed(5))
         };
         setUserLocation(nextLocation);
-        setLayers((current) => ({ ...current, geolocation: true }));
+        setShowUserLocation(true);
         map?.setView([nextLocation.lat, nextLocation.lng], Math.max(14, currentZoom));
         setMessage(applyNearbyFilter ? "Показали заезды рядом" : "Показали вашу позицию");
         if (applyNearbyFilter) {
@@ -193,7 +187,7 @@ export function CyclingMap({
 
     async function renderUserLocation() {
       const L = await import("leaflet");
-      if (!map || !layers.geolocation || !userLocation || cancelled) return;
+      if (!map || !showUserLocation || !userLocation || cancelled) return;
       rendered = L.circleMarker([userLocation.lat, userLocation.lng], {
         radius: 8,
         color: "#ffffff",
@@ -212,7 +206,14 @@ export function CyclingMap({
       cancelled = true;
       rendered?.remove();
     };
-  }, [layers.geolocation, map, userLocation]);
+  }, [map, showUserLocation, userLocation]);
+
+  const infrastructureMessage = isLoading
+    ? "Загружаем OSM велослои"
+    : error
+      ? `Часть слоев недоступна: ${error}`
+      : `${bikeLanes.length} велодорожек · ${aLanes.length} А-полос`;
+  const mapSubtitle = message === DEFAULT_MAP_MESSAGE ? infrastructureMessage : message;
 
   return (
     <div className="katnut-map relative h-[calc(var(--tg-viewport-height)-76px)] min-h-[560px] overflow-hidden bg-[#eef2ef]">
@@ -224,7 +225,7 @@ export function CyclingMap({
 
       <CyclingInfrastructureLayer
         map={map}
-        features={allInfrastructure}
+        features={infrastructureFeatures}
         layers={layers}
         currentZoom={currentZoom}
       />
@@ -237,7 +238,7 @@ export function CyclingMap({
           onSelectRide={handleSelectRide}
         />
       )}
-      <SelectedRideRouteLayer map={map} ride={selectedRide} currentZoom={currentZoom} />
+      {layers.selectedRideRoute && <SelectedRideRouteLayer map={map} ride={selectedRide} currentZoom={currentZoom} />}
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[560] px-3 pt-3">
         <div className="pointer-events-auto rounded-lg border border-white/80 bg-white/90 p-2 shadow-[0_12px_30px_rgb(15_23_42/0.12)] backdrop-blur-xl">
@@ -246,7 +247,7 @@ export function CyclingMap({
               <p className="text-[11px] font-black uppercase tracking-normal text-slate-950">Велокарта Москвы</p>
               <p className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-[11px] font-semibold text-slate-500">
                 <MapPinned size={12} />
-                <span className="truncate">{message}</span>
+                <span className="truncate">{mapSubtitle}</span>
               </p>
             </div>
             <div className="flex shrink-0 gap-1.5">
@@ -323,6 +324,8 @@ export function CyclingMap({
       <MapLayerControls
         open={layerSheetOpen}
         layers={layers}
+        hasSelectedRide={Boolean(selectedRide)}
+        unavailableLayers={unavailableLayers}
         onChange={setLayers}
         onClose={() => setLayerSheetOpen(false)}
       />
