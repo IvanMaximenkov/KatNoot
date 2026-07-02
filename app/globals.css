@@ -74,23 +74,70 @@ option {
 
 .leaflet-container {
   font-family: inherit;
+  background: #edf0ee;
+}
+
+.map-tile-soft {
+  filter: saturate(0.76) contrast(0.96) brightness(1.035);
+}
+
+.leaflet-control-zoom {
+  overflow: hidden;
+  border: 1px solid rgb(203 213 225 / 0.9) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 24px rgb(15 23 42 / 0.14) !important;
+}
+
+.leaflet-touch .leaflet-control-zoom a,
+.leaflet-control-zoom a {
+  width: 38px !important;
+  height: 38px !important;
+  border: 0 !important;
+  color: #17202a !important;
+  font-size: 24px !important;
+  line-height: 36px !important;
+  background: rgb(255 255 255 / 0.94) !important;
+}
+
+.leaflet-control-zoom a + a {
+  border-top: 1px solid rgb(226 232 240 / 0.95) !important;
+}
+
+.leaflet-control-attribution {
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.72) !important;
+  color: #64748b !important;
+  font-size: 10px !important;
+  box-shadow: 0 6px 18px rgb(15 23 42 / 0.08);
 }
 
 .ride-marker {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 3px solid white;
+  width: 30px;
+  height: 30px;
+  border: 2px solid white;
   border-radius: 999px;
   background: #1d7c5c;
   color: white;
-  box-shadow: 0 10px 28px rgb(15 23 42 / 0.25);
+  box-shadow: 0 8px 18px rgb(15 23 42 / 0.22);
 }
 
 .ride-marker svg {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
+}
+
+.ride-marker--compact {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+  box-shadow: 0 6px 14px rgb(15 23 42 / 0.18);
+}
+
+.ride-marker--compact svg {
+  width: 14px;
+  height: 14px;
 }
 
 .start-picker-map {
@@ -98,5 +145,105 @@ option {
 }
 
 .start-picker-marker {
+  width: 34px;
+  height: 34px;
   background: #0ea5e9;
+}
+
+.start-picker-marker svg {
+  width: 20px;
+  height: 20px;
+}
+
+.map-layer-swatch,
+.map-legend-line {
+  display: inline-block;
+  width: 20px;
+  height: 3px;
+  border-radius: 999px;
+}
+
+.map-layer-swatch {
+  width: 17px;
+}
+
+.map-layer-swatch--bikeRoads,
+.map-legend-line--bikeRoads {
+  background: #3f4e71;
+}
+
+.map-layer-swatch--bikeRoutes,
+.map-legend-line--bikeRoutes {
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    #12634c 0,
+    #12634c 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+.map-layer-swatch--aLanes,
+.map-legend-line--aLanes {
+  height: 2px;
+  background: #4bc2ff;
+}
+
+.transit-marker {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 5px 12px rgb(15 23 42 / 0.2);
+}
+
+.transit-marker--metro {
+  width: 18px;
+  padding: 0;
+  background: #f01818;
+  font-size: 12px;
+}
+
+.transit-marker--mcc {
+  background: #db4a8e;
+  font-size: 8px;
+}
+
+.transit-marker--mcd {
+  background: #2f78c4;
+  font-size: 8px;
+}
+
+.map-line-tooltip {
+  border: 1px solid rgb(226 232 240 / 0.95) !important;
+  border-radius: 8px !important;
+  background: rgb(255 255 255 / 0.94) !important;
+  color: #17202a !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 0.14) !important;
+}
+
+.map-line-tooltip::before {
+  display: none;
+}
+
+.map-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgb(15 23 42 / 0.18);
+}
+
+.map-popup .leaflet-popup-content {
+  margin: 10px 12px;
+  color: #17202a;
+  font-size: 12px;
+  line-height: 1.35;
 }

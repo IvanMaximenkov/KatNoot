@@ -1,4 +1,4 @@
-function escapeHtml(value: string) {
+export function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -21,4 +21,9 @@ const bikeSvg = `
 
 export function bikeMarkerHtml(title: string, className = "ride-marker") {
   return `<span class="${className}" title="${escapeHtml(title)}">${bikeSvg}</span>`;
+}
+
+export function transitMarkerHtml(title: string, type: "metro" | "mcc" | "mcd") {
+  const label = type === "metro" ? "М" : type === "mcc" ? "МЦК" : "МЦД";
+  return `<span class="transit-marker transit-marker--${type}" title="${escapeHtml(title)}">${label}</span>`;
 }
