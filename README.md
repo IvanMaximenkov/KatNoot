@@ -9,7 +9,7 @@
 - Next.js App Router, TypeScript, Tailwind CSS.
 - Supabase PostgreSQL для пользователей, ролей, клубов, заявок, заездов, маршрутов, регистраций, уведомлений, жалоб и POI на карте.
 - API routes для создания/редактирования/отмены заездов, заявок на клубы, админки, маршрутов, регистрации и Telegram auth.
-- Leaflet + настраиваемый tile provider. В демо используется OSM, production можно перевести на Mapbox/MapTiler/свой сервер через env.
+- Leaflet + настраиваемый tile provider. В демо используется легальная светлая OSM-подложка с атрибуцией, production можно перевести на Mapbox/MapTiler/свой сервер через env.
 - Telegram Mini App WebApp API helper.
 - Серверная проверка Telegram `initData` через `TELEGRAM_BOT_TOKEN`.
 - Демо-режим без Supabase env: приложение открывается в браузере с живыми seed-данными.
@@ -35,9 +35,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 TELEGRAM_BOT_TOKEN=123456:bot-token-from-botfather
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
-NEXT_PUBLIC_MAP_ATTRIBUTION=(c) OpenStreetMap contributors
+NEXT_PUBLIC_MAP_PROVIDER=demo_osm
+NEXT_PUBLIC_MAP_TILE_URL=
 NEXT_PUBLIC_MAP_STYLE_URL=
+NEXT_PUBLIC_MAP_ATTRIBUTION=
+NEXT_PUBLIC_MAPBOX_TOKEN=
+NEXT_PUBLIC_MAPTILER_KEY=
+NEXT_PUBLIC_MAP_MIN_ZOOM=9
+NEXT_PUBLIC_MAP_MAX_ZOOM=19
+NEXT_PUBLIC_MAP_MAX_NATIVE_ZOOM=18
 ROUTING_PROVIDER=
 ROUTING_API_KEY=
 ROUTING_BASE_URL=
@@ -187,6 +193,46 @@ NEXT_PUBLIC_APP_URL=https://your-vercel-domain.vercel.app
 - `POST /api/routes/gpx`, `POST /api/routes/manual`, `GET/PATCH/DELETE /api/routes/[id]`.
 - `GET /api/notifications`, `POST /api/notifications/[id]/read`.
 - `PATCH /api/users/[id]` — обновить базовые предпочтения.
+
+## Велокарта и данные
+
+Страница `/map` построена на Leaflet и разделяет слои:
+
+- городская подложка из настраиваемого tile provider;
+- `cycling_infrastructure`: велодорожки, городские веломаршруты, А-полосы и точки инфраструктуры;
+- старты заездов с кластеризацией на дальнем zoom;
+- маршрут выбранного заезда отдельным янтарным слоем;
+- route editor для GPX/manual/external route flow.
+
+Демо-данные велоинфраструктуры лежат в `data/demo/cyclingInfrastructure.geojson`. Это локальный GeoJSON без runtime scraping. Чтобы заменить его на реальные подготовленные данные:
+
+```bash
+npx tsx scripts/import-cycling-geojson.ts ./prepared-moscow-cycling.geojson data/demo/cyclingInfrastructure.geojson
+```
+
+Для Supabase примените миграции, затем наполните таблицу `cycling_infrastructure` полями `type`, `geometry_geojson`, `importance`, `source`, `min_zoom`. Если таблица пустая или Supabase env не задан, приложение использует локальный demo GeoJSON.
+
+Карта читает env:
+
+```bash
+NEXT_PUBLIC_MAP_PROVIDER=demo_osm # demo_osm | maptiler | mapbox | custom
+NEXT_PUBLIC_MAP_TILE_URL=
+NEXT_PUBLIC_MAP_STYLE_URL=
+NEXT_PUBLIC_MAP_ATTRIBUTION=
+NEXT_PUBLIC_MAPBOX_TOKEN=
+NEXT_PUBLIC_MAPTILER_KEY=
+NEXT_PUBLIC_MAP_MIN_ZOOM=9
+NEXT_PUBLIC_MAP_MAX_ZOOM=19
+NEXT_PUBLIC_MAP_MAX_NATIVE_ZOOM=18
+```
+
+Для ручной проверки карты:
+
+1. Откройте `/map`: должны быть видны светлая подложка, крупные веломаршруты и кластеры/маркеры заездов.
+2. Приближайте карту: на `z 12-13` появляются больше велодорожек и А-полосы, на `z >= 14` точки инфраструктуры.
+3. Нажмите “Слои”: включите/выключите велодорожки, веломаршруты, А-полосы и точки; обновите страницу, состояние должно сохраниться.
+4. Нажмите маркер заезда: открывается bottom sheet, а маршрут заезда выделяется отдельно, если он есть.
+5. На `/create` или `/rides/[id]/edit` проверьте GPX, ручной черновой маршрут и внешнюю ссылку. Невалидная геометрия не должна сохраняться.
 
 ## Текущие ограничения
 

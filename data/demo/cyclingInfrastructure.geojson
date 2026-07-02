@@ -1,0 +1,766 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "route-moskva-river-core",
+        "type": "cycling_route",
+        "title": "Городской маршрут вдоль Москвы-реки",
+        "description": "Обзорная линия вдоль центральных набережных.",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 8.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.4857, 55.7482],
+          [37.5098, 55.7242],
+          [37.5426, 55.7104],
+          [37.5758, 55.7189],
+          [37.6037, 55.7298],
+          [37.6285, 55.752],
+          [37.6598, 55.7666],
+          [37.6887, 55.7824]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "route-green-ring-east",
+        "type": "cycling_route",
+        "title": "Восточная зеленая связка",
+        "description": "Парковый коридор через Сокольники, Лосиный остров и Измайлово.",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 8.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6411, 55.821],
+          [37.6797, 55.7893],
+          [37.7206, 55.8126],
+          [37.7813, 55.7869],
+          [37.7996, 55.7775],
+          [37.7583, 55.7738],
+          [37.7286, 55.7576]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "route-west-parks",
+        "type": "cycling_route",
+        "title": "Западные парки",
+        "description": "Связка Фили, Крылатского, Парка Победы и Сколково.",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 8.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.5655, 55.7436],
+          [37.5146, 55.7362],
+          [37.4857, 55.7482],
+          [37.4352, 55.7597],
+          [37.3997, 55.8052],
+          [37.3594, 55.6988]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "route-southwest-parks",
+        "type": "cycling_route",
+        "title": "Юго-западные парки",
+        "description": "Условная городская связка от набережных к юго-западу.",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 9
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.605, 55.6893],
+          [37.5838, 55.6769],
+          [37.5737, 55.6604],
+          [37.5596, 55.6437],
+          [37.5431, 55.6265]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "route-yauza-central",
+        "type": "cycling_route",
+        "title": "Яуза",
+        "description": "Северо-восточный коридор вдоль Яузы.",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 9
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.653, 55.741],
+          [37.6683, 55.7523],
+          [37.6791, 55.7722],
+          [37.6887, 55.7824],
+          [37.6788, 55.7941]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "route-boulevard-center",
+        "type": "cycling_route",
+        "title": "Тихий центр",
+        "description": "Короткая обзорная линия по бульварам и набережным.",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6387, 55.7647],
+          [37.6298, 55.7636],
+          [37.6198, 55.7637],
+          [37.6084, 55.7639],
+          [37.5957, 55.7604],
+          [37.5901, 55.756],
+          [37.6044, 55.7437],
+          [37.6179, 55.7424],
+          [37.6313, 55.7568],
+          [37.6387, 55.7647]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "route-south-river",
+        "type": "cycling_route",
+        "title": "Южная речная связка",
+        "description": "Линия через ЗИЛ, Коломенское и юго-восток.",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 11.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6485, 55.6987],
+          [37.663, 55.7067],
+          [37.6765, 55.6914],
+          [37.6972, 55.671],
+          [37.7431, 55.6495],
+          [37.7896, 55.6982]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-gorky-embankment",
+        "type": "bike_lane",
+        "title": "Парк Горького - Крымская набережная",
+        "description": "Центральный участок велодорожки у парка.",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 10
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6037, 55.7298],
+          [37.6067, 55.735],
+          [37.6078, 55.7422]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-frunzenskaya",
+        "type": "bike_lane",
+        "title": "Фрунзенская набережная",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.5869, 55.7229],
+          [37.5758, 55.7189],
+          [37.563, 55.7208]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-luzhniki-loop",
+        "type": "bike_lane",
+        "title": "Лужники",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.563, 55.7208],
+          [37.5546, 55.7287],
+          [37.5404, 55.7362],
+          [37.5333, 55.7406]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-vorobyovy",
+        "type": "bike_lane",
+        "title": "Воробьевы горы",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.5426, 55.7104],
+          [37.532, 55.717],
+          [37.5266, 55.7165],
+          [37.5098, 55.7242]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-filevsky-park",
+        "type": "bike_lane",
+        "title": "Филевский парк",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.4857, 55.7482],
+          [37.5009, 55.7508],
+          [37.5244, 55.7434],
+          [37.5378, 55.7338]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-krylatskoe-sport",
+        "type": "bike_lane",
+        "title": "Крылатское",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 10.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.4352, 55.7597],
+          [37.4213, 55.7674],
+          [37.4027, 55.7585],
+          [37.4052, 55.7446],
+          [37.4251, 55.7362],
+          [37.4472, 55.7445],
+          [37.4352, 55.7597]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-strogino",
+        "type": "bike_lane",
+        "title": "Строгино - Щукино",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 11.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.3997, 55.8052],
+          [37.4254, 55.7971],
+          [37.4536, 55.7902],
+          [37.4762, 55.785],
+          [37.5073, 55.7772]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-vdnh-core",
+        "type": "bike_lane",
+        "title": "ВДНХ",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 10.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6389, 55.8244],
+          [37.6328, 55.8296],
+          [37.6225, 55.8366],
+          [37.6322, 55.8444]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-botanical",
+        "type": "bike_lane",
+        "title": "Ботанический сад",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6411, 55.821],
+          [37.6491, 55.8305],
+          [37.6504, 55.8381],
+          [37.6387, 55.8457]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-sokolniki",
+        "type": "bike_lane",
+        "title": "Сокольники",
+        "source": "demo",
+        "importance": "major",
+        "min_zoom": 10.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6797, 55.7893],
+          [37.6788, 55.7941],
+          [37.6946, 55.8057],
+          [37.7206, 55.8126]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-izmailovo-north",
+        "type": "bike_lane",
+        "title": "Измайлово север",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.7498, 55.7916],
+          [37.7813, 55.7869],
+          [37.7996, 55.7775]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-izmailovo-south",
+        "type": "bike_lane",
+        "title": "Измайлово юг",
+        "source": "demo",
+        "importance": "minor",
+        "min_zoom": 13
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.7894, 55.7688],
+          [37.7583, 55.7738],
+          [37.7498, 55.7916]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-yauza-short",
+        "type": "bike_lane",
+        "title": "Яуза у Бауманской",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6598, 55.7666],
+          [37.6697, 55.766],
+          [37.6791, 55.7722]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-zamoskvorechie",
+        "type": "bike_lane",
+        "title": "Замоскворечье",
+        "source": "demo",
+        "importance": "minor",
+        "min_zoom": 13
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6124, 55.7292],
+          [37.6243, 55.7337],
+          [37.6378, 55.7367],
+          [37.653, 55.741]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-kolomenskoe",
+        "type": "bike_lane",
+        "title": "Коломенское",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.663, 55.7067],
+          [37.6765, 55.6914],
+          [37.6972, 55.671]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-bitsevsky",
+        "type": "bike_lane",
+        "title": "Битцевский лес",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6036, 55.6649],
+          [37.5952, 55.6437],
+          [37.5733, 55.6265],
+          [37.5487, 55.6034]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-park-pobedy",
+        "type": "bike_lane",
+        "title": "Парк Победы",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.5146, 55.7362],
+          [37.532, 55.7476],
+          [37.5655, 55.7436]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lane-taganka",
+        "type": "bike_lane",
+        "title": "Таганка",
+        "source": "demo",
+        "importance": "minor",
+        "min_zoom": 13
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.653, 55.741],
+          [37.6683, 55.7523],
+          [37.6592, 55.7588]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "a-tverskaya",
+        "type": "a_lane",
+        "title": "А-полоса Тверская",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.605, 55.765],
+          [37.6112, 55.7597],
+          [37.6173, 55.7558],
+          [37.6285, 55.752]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "a-prospekt-mira",
+        "type": "a_lane",
+        "title": "А-полоса Проспект Мира",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6338, 55.7796],
+          [37.636, 55.795],
+          [37.6382, 55.8103],
+          [37.6411, 55.821]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "a-leninsky",
+        "type": "a_lane",
+        "title": "А-полоса Ленинский",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.585, 55.7075],
+          [37.605, 55.6893],
+          [37.5518, 55.6696],
+          [37.5266, 55.6482]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "a-kutuzovsky",
+        "type": "a_lane",
+        "title": "А-полоса Кутузовский",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 12.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.5655, 55.7436],
+          [37.5333, 55.7406],
+          [37.5146, 55.7362],
+          [37.4866, 55.7289]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "a-varshavskoe",
+        "type": "a_lane",
+        "title": "А-полоса Варшавское",
+        "source": "demo",
+        "importance": "minor",
+        "min_zoom": 13
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.605, 55.6893],
+          [37.6224, 55.6718],
+          [37.6201, 55.653],
+          [37.6193, 55.6322]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "a-volgogradsky",
+        "type": "a_lane",
+        "title": "А-полоса Волгоградский",
+        "source": "demo",
+        "importance": "minor",
+        "min_zoom": 13
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.653, 55.741],
+          [37.6875, 55.7284],
+          [37.7322, 55.7156],
+          [37.7658, 55.7014]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "a-enthusiasts",
+        "type": "a_lane",
+        "title": "А-полоса Шоссе Энтузиастов",
+        "source": "demo",
+        "importance": "minor",
+        "min_zoom": 13
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [37.6592, 55.7588],
+          [37.7044, 55.7597],
+          [37.7449, 55.7643],
+          [37.8284, 55.777]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "point-gorky-repair",
+        "type": "repair",
+        "title": "Сервисная стойка у Парка Горького",
+        "description": "Demo-точка ремонта и насоса.",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 14
+      },
+      "geometry": { "type": "Point", "coordinates": [37.6067, 55.735] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "point-muzeon-water",
+        "type": "water",
+        "title": "Питьевая вода у Музеона",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 14
+      },
+      "geometry": { "type": "Point", "coordinates": [37.6067, 55.7358] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "point-bauman-repair",
+        "type": "repair",
+        "title": "Мастерская у Бауманской",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 14
+      },
+      "geometry": { "type": "Point", "coordinates": [37.6791, 55.7722] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "point-yauza-warning",
+        "type": "danger",
+        "title": "Узкий участок у Яузы",
+        "description": "Много пешеходов вечером.",
+        "source": "demo",
+        "importance": "minor",
+        "min_zoom": 15
+      },
+      "geometry": { "type": "Point", "coordinates": [37.6697, 55.766] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "point-krylatskoe-meeting",
+        "type": "meeting_point",
+        "title": "Сбор у велотрека",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 14
+      },
+      "geometry": { "type": "Point", "coordinates": [37.4352, 55.7597] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "point-vdnh-parking",
+        "type": "bike_parking",
+        "title": "Велопарковка ВДНХ",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 14
+      },
+      "geometry": { "type": "Point", "coordinates": [37.6389, 55.8244] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "point-sokolniki-meeting",
+        "type": "meeting_point",
+        "title": "Круг у фонтана",
+        "source": "demo",
+        "importance": "medium",
+        "min_zoom": 14
+      },
+      "geometry": { "type": "Point", "coordinates": [37.6788, 55.7941] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "point-izmailovo-water",
+        "type": "water",
+        "title": "Вода у Измайлово",
+        "source": "demo",
+        "importance": "minor",
+        "min_zoom": 15
+      },
+      "geometry": { "type": "Point", "coordinates": [37.7498, 55.7916] }
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AuthError, requireUser } from "@/lib/auth/permissions";
 import { deleteRoute, getRouteById, updateRoute } from "@/lib/db/repository";
 import { routeSchema } from "@/lib/db/schemas";
+import { validateRouteGeometry } from "@/lib/map/geojsonUtils";
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const route = await getRouteById(params.id);
@@ -20,6 +21,15 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   try {
     await requireUser(request, parsed.data.created_by_user_id ?? null);
+    if (parsed.data.geometry_geojson) {
+      const validation = validateRouteGeometry(parsed.data.geometry_geojson);
+      if (!validation.ok) {
+        return NextResponse.json({ error: validation.errors[0] }, { status: 400 });
+      }
+      parsed.data.simplified_geometry_geojson = validation.simplified;
+      parsed.data.distance_km = validation.distanceKm;
+      parsed.data.bbox = validation.bbox;
+    }
     const route = await updateRoute(params.id, parsed.data);
     return NextResponse.json({ route });
   } catch (error) {

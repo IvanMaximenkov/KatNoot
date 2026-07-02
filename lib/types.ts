@@ -142,6 +142,7 @@ export interface Route {
   original_url: string | null;
   file_name: string | null;
   geometry_geojson: GeoJsonLineString | null;
+  simplified_geometry_geojson?: GeoJsonLineString | null;
   encoded_polyline: string | null;
   distance_km: number | null;
   elevation_gain_m: number | null;
@@ -153,7 +154,14 @@ export interface Route {
 
 export type RouteDraft = Pick<
   Route,
-  "title" | "source_type" | "original_url" | "file_name" | "geometry_geojson" | "distance_km" | "elevation_gain_m"
+  | "title"
+  | "source_type"
+  | "original_url"
+  | "file_name"
+  | "geometry_geojson"
+  | "simplified_geometry_geojson"
+  | "distance_km"
+  | "elevation_gain_m"
 >;
 
 export interface RouteWaypoint {

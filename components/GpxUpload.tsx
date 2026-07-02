@@ -27,6 +27,7 @@ export function GpxUpload({ onRoute }: { onRoute: (route: RouteDraft) => void })
         original_url: null,
         file_name: file.name,
         geometry_geojson: parsed.geometry,
+        simplified_geometry_geojson: parsed.simplified_geometry,
         distance_km: parsed.distance_km,
         elevation_gain_m: null
       });

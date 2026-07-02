@@ -71,6 +71,13 @@ export const createRideSchema = z.object({
         })
         .nullable()
         .optional(),
+      simplified_geometry_geojson: z
+        .object({
+          type: z.literal("LineString"),
+          coordinates: z.array(z.tuple([z.number(), z.number()])).min(2)
+        })
+        .nullable()
+        .optional(),
       distance_km: z.coerce.number().min(0).max(1000).nullable().optional(),
       elevation_gain_m: z.coerce.number().min(0).max(20000).nullable().optional()
     })
@@ -161,8 +168,16 @@ export const routeSchema = z.object({
     })
     .nullable()
     .optional(),
+  simplified_geometry_geojson: z
+    .object({
+      type: z.literal("LineString"),
+      coordinates: z.array(z.tuple([z.number(), z.number()])).min(2)
+    })
+    .nullable()
+    .optional(),
   distance_km: z.coerce.number().min(0).max(1000).nullable().optional(),
-  elevation_gain_m: z.coerce.number().min(0).max(20000).nullable().optional()
+  elevation_gain_m: z.coerce.number().min(0).max(20000).nullable().optional(),
+  bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable().optional()
 });
 
 export const reportUpdateSchema = z.object({

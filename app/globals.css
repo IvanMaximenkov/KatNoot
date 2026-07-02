@@ -77,6 +77,19 @@ option {
   background: #edf0ee;
 }
 
+.katnut-map .leaflet-bottom.leaflet-right {
+  bottom: 92px;
+}
+
+.katnut-map .leaflet-bottom.leaflet-left {
+  bottom: 78px;
+}
+
+.katnut-map .leaflet-control-container {
+  position: relative;
+  z-index: 540;
+}
+
 .map-tile-soft {
   filter: saturate(0.76) contrast(0.96) brightness(1.035);
 }
@@ -123,6 +136,33 @@ option {
   box-shadow: 0 8px 18px rgb(15 23 42 / 0.22);
 }
 
+.ride-marker--published {
+  background: #1d7c5c;
+}
+
+.ride-marker--full {
+  background: #475569;
+}
+
+.ride-marker--cancelled {
+  background: #b4534b;
+  opacity: 0.82;
+}
+
+.ride-marker--selected {
+  width: 38px;
+  height: 38px;
+  border-width: 3px;
+  background: #f59e0b;
+  color: #17202a;
+  box-shadow: 0 0 0 4px rgb(245 158 11 / 0.22), 0 12px 26px rgb(15 23 42 / 0.25);
+}
+
+.ride-marker--start {
+  background: #14b8a6;
+  color: #ffffff;
+}
+
 .ride-marker svg {
   width: 17px;
   height: 17px;
@@ -138,6 +178,21 @@ option {
 .ride-marker--compact svg {
   width: 14px;
   height: 14px;
+}
+
+.ride-cluster {
+  display: grid;
+  min-width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  background: #17202a;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 10px 22px rgb(15 23 42 / 0.22);
 }
 
 .start-picker-map {
@@ -168,12 +223,16 @@ option {
 }
 
 .map-layer-swatch--bikeRoads,
-.map-legend-line--bikeRoads {
+.map-legend-line--bikeRoads,
+.map-layer-swatch--bikeLanes,
+.map-legend-line--bikeLanes {
   background: #3f4e71;
 }
 
 .map-layer-swatch--bikeRoutes,
-.map-legend-line--bikeRoutes {
+.map-legend-line--bikeRoutes,
+.map-layer-swatch--cyclingRoutes,
+.map-legend-line--cyclingRoutes {
   height: 2px;
   background: repeating-linear-gradient(
     to right,
@@ -188,6 +247,35 @@ option {
 .map-legend-line--aLanes {
   height: 2px;
   background: #4bc2ff;
+}
+
+.map-layer-swatch--selectedRide,
+.map-legend-line--selectedRide {
+  height: 3px;
+  background: #f59e0b;
+}
+
+.map-legend-line--rideStart {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #1d7c5c;
+  box-shadow: 0 0 0 1px rgb(15 23 42 / 0.18);
+}
+
+.route-editor-point {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  background: #0f9f8f;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgb(15 23 42 / 0.22);
 }
 
 .transit-marker {

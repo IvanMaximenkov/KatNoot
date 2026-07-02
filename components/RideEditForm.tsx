@@ -3,10 +3,15 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { Check, Loader2, Save } from "lucide-react";
+import { ExternalRouteInput } from "@/components/ExternalRouteInput";
+import { GpxUpload } from "@/components/GpxUpload";
+import { ManualRouteBuilder } from "@/components/ManualRouteBuilder";
 import { RideCancelDialog } from "@/components/RideCancelDialog";
+import { RoutePreviewMap } from "@/components/RoutePreviewMap";
+import { RouteSummary } from "@/components/RouteSummary";
 import { bikeTypeLabels, levelLabels, rideTypeLabels } from "@/lib/labels";
 import { formatDateInputValue } from "@/lib/format";
-import type { BikeType, CyclingLevel, RideType, RideWithClub } from "@/lib/types";
+import type { BikeType, CyclingLevel, RideType, RideWithClub, RouteDraft } from "@/lib/types";
 
 const levelOptions = Object.entries(levelLabels) as Array<[CyclingLevel, string]>;
 const bikeOptions = Object.entries(bikeTypeLabels) as Array<[BikeType, string]>;
@@ -15,6 +20,27 @@ const rideTypeOptions = Object.entries(rideTypeLabels) as Array<[RideType, strin
 export function RideEditForm({ ride }: { ride: RideWithClub }) {
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [routeDraft, setRouteDraft] = useState<RouteDraft | null>(
+    ride.route
+      ? {
+          title: ride.route.title,
+          source_type: ride.route.source_type,
+          original_url: ride.route.original_url,
+          file_name: ride.route.file_name,
+          geometry_geojson: ride.route.geometry_geojson,
+          simplified_geometry_geojson: ride.route.simplified_geometry_geojson ?? null,
+          distance_km: ride.route.distance_km,
+          elevation_gain_m: ride.route.elevation_gain_m
+        }
+      : null
+  );
+  const [routeMode, setRouteMode] = useState<"gpx" | "manual" | "external">("gpx");
+  const [routeChanged, setRouteChanged] = useState(false);
+
+  function updateRouteDraft(route: RouteDraft) {
+    setRouteDraft(route);
+    setRouteChanged(true);
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,7 +66,11 @@ export function RideEditForm({ ride }: { ride: RideWithClub }) {
         : null,
       rules: String(form.get("rules") || "") || null,
       what_to_bring: String(form.get("what_to_bring") || "") || null,
-      route_url: String(form.get("route_url") || "") || null,
+      route_url:
+        routeChanged && routeDraft?.source_type === "external_url"
+          ? routeDraft.original_url
+          : String(form.get("route_url") || "") || null,
+      route_payload: routeChanged ? routeDraft ?? undefined : undefined,
       telegram_chat_url: String(form.get("telegram_chat_url") || "") || null,
       status: String(form.get("status"))
     };
@@ -161,6 +191,37 @@ export function RideEditForm({ ride }: { ride: RideWithClub }) {
           <TextArea id="what_to_bring" label="Что взять" value={ride.what_to_bring ?? ""} />
           <TextField id="route_url" label="Внешняя ссылка на маршрут" value={ride.route_url ?? ""} />
           <TextField id="telegram_chat_url" label="Telegram чат" value={ride.telegram_chat_url ?? ""} />
+        </div>
+
+        <div className="rounded-lg border border-app-stroke bg-app-card p-4 shadow-soft">
+          <h2 className="text-base font-black">Маршрут</h2>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[
+              ["gpx", "GPX"],
+              ["manual", "Вручную"],
+              ["external", "Ссылка"]
+            ].map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setRouteMode(mode as typeof routeMode)}
+                className={`h-10 rounded-lg text-sm font-bold ${
+                  routeMode === mode
+                    ? "bg-app-accent text-app-accentText"
+                    : "border border-app-stroke bg-white text-app-muted"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 space-y-3">
+            {routeMode === "gpx" && <GpxUpload onRoute={updateRouteDraft} />}
+            {routeMode === "manual" && <ManualRouteBuilder onRoute={updateRouteDraft} />}
+            {routeMode === "external" && <ExternalRouteInput onRoute={updateRouteDraft} />}
+            <RouteSummary route={routeDraft} />
+            <RoutePreviewMap route={routeDraft} />
+          </div>
         </div>
 
         {message && (

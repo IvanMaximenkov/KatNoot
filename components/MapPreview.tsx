@@ -2,7 +2,8 @@
 import { useEffect, useRef } from "react";
 import type { Map as LeafletMap } from "leaflet";
 import { lineStringToPoints } from "@/lib/geo";
-import { getMapTileConfig } from "@/lib/map-config";
+import { getMapTileConfig } from "@/lib/map/mapConfig";
+import { MAP_PALETTE } from "@/lib/map/mapStyles";
 import { bikeMarkerHtml } from "@/lib/map-markers";
 import type { GeoJsonLineString } from "@/lib/types";
 
@@ -44,7 +45,8 @@ export function MapPreview({
         .addTo(map);
 
       L.tileLayer(tile.url, {
-        maxZoom: 19,
+        maxZoom: tile.maxZoom,
+        maxNativeZoom: tile.maxNativeZoom,
         attribution: tile.attribution
       }).addTo(map);
 
@@ -52,8 +54,15 @@ export function MapPreview({
       if (routePoints.length > 1) {
         const latLngs = routePoints.map((point) => [point.lat, point.lng] as [number, number]);
         L.polyline(latLngs, {
-          color: "#1d4ed8",
-          weight: 5,
+          color: "#ffffff",
+          weight: 9,
+          opacity: 0.82,
+          lineCap: "round",
+          lineJoin: "round"
+        }).addTo(map);
+        L.polyline(latLngs, {
+          color: MAP_PALETTE.selectedRoute,
+          weight: 5.2,
           opacity: 0.9,
           lineCap: "round",
           lineJoin: "round"

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AuthError, canCreateRide, requireUser } from "@/lib/auth/permissions";
 import { createRide, createRoute, getRideDetail, listRides } from "@/lib/db/repository";
 import { createRideSchema } from "@/lib/db/schemas";
+import { validateRouteGeometry } from "@/lib/map/geojsonUtils";
 
 export async function GET() {
   const rides = await listRides();
@@ -42,15 +43,25 @@ export async function POST(request: Request) {
 
     if (parsed.data.route_payload) {
       const routePayload = parsed.data.route_payload;
+      const validation = routePayload.geometry_geojson
+        ? validateRouteGeometry(routePayload.geometry_geojson, {
+            allowLongDistance: parsed.data.ride_type === "long"
+          })
+        : null;
+      if (validation && !validation.ok) {
+        return NextResponse.json({ error: validation.errors[0] }, { status: 400 });
+      }
       const route = await createRoute({
         title: routePayload.title,
         source_type: routePayload.source_type,
         original_url: routePayload.original_url ?? null,
         file_name: routePayload.file_name ?? null,
         geometry_geojson: routePayload.geometry_geojson ?? null,
+        simplified_geometry_geojson: validation?.ok ? validation.simplified : null,
         encoded_polyline: null,
-        distance_km: routePayload.distance_km ?? null,
+        distance_km: validation?.ok ? validation.distanceKm : routePayload.distance_km ?? null,
         elevation_gain_m: routePayload.elevation_gain_m ?? null,
+        bbox: validation?.ok ? validation.bbox : undefined,
         created_by_user_id: actor.id
       });
       routeId = route.id;

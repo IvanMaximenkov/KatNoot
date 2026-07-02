@@ -10,6 +10,8 @@ export function RouteSummary({ route }: { route: RouteDraft | null }) {
     );
   }
 
+  const isExternal = route.source_type === "external_url";
+
   return (
     <div className="rounded-lg border border-app-stroke bg-emerald-50 p-3 text-emerald-800">
       <div className="flex items-center gap-2 text-sm font-black">
@@ -19,11 +21,16 @@ export function RouteSummary({ route }: { route: RouteDraft | null }) {
       <p className="mt-1 text-xs font-semibold">
         {route.distance_km ? `${route.distance_km} км · ` : ""}
         {route.source_type === "manual"
-          ? "построен вручную"
+          ? "черновой маршрут построен вручную"
           : route.source_type === "gpx_upload" || route.source_type === "komoot_gpx"
             ? "загружен из GPX"
             : "внешняя ссылка"}
       </p>
+      {isExternal && (
+        <p className="mt-2 text-xs font-semibold text-emerald-900/80">
+          Ссылка сохранена. Для отображения маршрута на карте загрузите GPX или постройте маршрут вручную.
+        </p>
+      )}
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { RoutePreviewMap } from "@/components/RoutePreviewMap";
 import { RouteSummary } from "@/components/RouteSummary";
 import { bikeTypeLabels, levelLabels, rideTypeLabels } from "@/lib/labels";
 import { formatDateInputValue, rideShareText } from "@/lib/format";
-import { getMapTileConfig } from "@/lib/map-config";
+import { getMapTileConfig } from "@/lib/map/mapConfig";
 import { bikeMarkerHtml } from "@/lib/map-markers";
 import { hapticFeedback } from "@/lib/telegram/webapp";
 import type {

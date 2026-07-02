@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { AuthError, canEditRide, requireUser } from "@/lib/auth/permissions";
-import { getRideDetail, updateRide } from "@/lib/db/repository";
+import { createRoute, getRideDetail, updateRide } from "@/lib/db/repository";
 import { updateRideSchema } from "@/lib/db/schemas";
+import { validateRouteGeometry } from "@/lib/map/geojsonUtils";
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const ride = await getRideDetail(params.id, true);
@@ -24,7 +25,37 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (!allowed) {
       return NextResponse.json({ error: "Нет прав на редактирование заезда" }, { status: 403 });
     }
-    const { actor_user_id: _actorUserId, route_payload: _routePayload, ...updates } = parsed.data;
+    const { actor_user_id: _actorUserId, route_payload: routePayload, ...updates } = parsed.data;
+
+    if (routePayload) {
+      const validation = routePayload.geometry_geojson
+        ? validateRouteGeometry(routePayload.geometry_geojson, {
+            allowLongDistance: updates.ride_type === "long"
+          })
+        : null;
+      if (validation && !validation.ok) {
+        return NextResponse.json({ error: validation.errors[0] }, { status: 400 });
+      }
+
+      const route = await createRoute({
+        title: routePayload.title,
+        source_type: routePayload.source_type,
+        original_url: routePayload.original_url ?? null,
+        file_name: routePayload.file_name ?? null,
+        geometry_geojson: routePayload.geometry_geojson ?? null,
+        simplified_geometry_geojson: validation?.ok ? validation.simplified : null,
+        encoded_polyline: null,
+        distance_km: validation?.ok ? validation.distanceKm : routePayload.distance_km ?? null,
+        elevation_gain_m: routePayload.elevation_gain_m ?? null,
+        bbox: validation?.ok ? validation.bbox : undefined,
+        created_by_user_id: actor.id
+      });
+
+      updates.route_id = route.id;
+      updates.route_url = route.original_url ?? updates.route_url ?? null;
+      updates.distance_km = route.distance_km ?? updates.distance_km;
+    }
+
     const ride = await updateRide(params.id, updates, actor.id);
     const detail = await getRideDetail(params.id, true);
     return NextResponse.json({ ride: detail ?? ride });

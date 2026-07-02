@@ -16,6 +16,7 @@ export function ExternalRouteInput({ onRoute }: { onRoute: (route: RouteDraft) =
       original_url: url.trim(),
       file_name: null,
       geometry_geojson: null,
+      simplified_geometry_geojson: null,
       distance_km: null,
       elevation_gain_m: null
     });
